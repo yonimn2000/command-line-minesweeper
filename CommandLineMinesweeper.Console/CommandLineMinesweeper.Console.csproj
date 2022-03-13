@@ -11,4 +11,8 @@
     <Copyright>Copyright 2022 © Yonatan Mankovich</Copyright>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\CommandLineMinesweeper.Core\CommandLineMinesweeper.Core.csproj" />
+  </ItemGroup>
+
 </Project>
