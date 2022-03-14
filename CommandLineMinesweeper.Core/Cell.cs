@@ -1,10 +1,18 @@
-﻿namespace YonatanMankovich.CommandLineMinesweeper.Core
+﻿using System.Drawing;
+
+namespace YonatanMankovich.CommandLineMinesweeper.Core
 {
-    public class Cell
+    internal class Cell
     {
+        public Point Coordinates { get; set; }
         public CellState State { get; set; } = CellState.Untouched;
         public bool IsMine { get; set; } = false;
         public int NumberOfMinesAround { get; set; } = 0;
+
+        public Cell(Point coordinates)
+        {
+            Coordinates = coordinates;
+        }
 
         public bool Reveal() // True if revealed a mine.
         {

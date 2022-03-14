@@ -1,6 +1,6 @@
 ﻿namespace YonatanMankovich.CommandLineMinesweeper.Core
 {
-    public enum CellState
+    internal enum CellState
     {
         Untouched,
         Revealed,

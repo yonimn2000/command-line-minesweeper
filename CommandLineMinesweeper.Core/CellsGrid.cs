@@ -1,6 +1,8 @@
-﻿namespace YonatanMankovich.CommandLineMinesweeper.Core
+﻿using System.Drawing;
+
+namespace YonatanMankovich.CommandLineMinesweeper.Core
 {
-    public class CellsGrid
+    internal class CellsGrid
     {
         public int Width => Grid.GetLength(0);
         public int Height => Grid.GetLength(1);
@@ -11,35 +13,40 @@
             Grid = new Cell[width, height];
             for (int y = 0; y < height; y++)
                 for (int x = 0; x < width; x++)
-                    Grid[x, y] = new Cell();
+                    Grid[x, y] = new Cell(new Point(x, y));
         }
 
-        public Cell? GetCell(int x, int y)
+        public Cell GetCell(int x, int y)
         {
-            if (x >= 0 && x < Width && y >= 0 && y < Height) // Check inside the grid.
+            if (IsPointOnGrid(x, y))
                 return Grid[x, y];
-            return null;
+
+            throw new IndexOutOfRangeException("The provided point coordinates were outside of the grid.");
+        }
+
+        public bool IsPointOnGrid(int x, int y)
+        {
+            return x >= 0 && x < Width && y >= 0 && y < Height;
         }
 
         public List<Cell> GetNeighboringCells(int x, int y)
         {
-            List<Cell> neighbors = new List<Cell>(8);
+            List<Cell> neighbors = new List<Cell>(8); // Max 8 neighbors.
 
             // Add all neighbors around the current cell.
             for (int xOffset = -1; xOffset < 2; xOffset++)
-            {
                 for (int yOffset = -1; yOffset < 2; yOffset++)
-                {
-                    if (xOffset != 0 || yOffset != 0) // Do not include current cell.
-                    {
-                        Cell? cell = GetCell(x + xOffset, y + yOffset);
-                        if (cell != null) // Cell is null if it outside the grid.
-                            neighbors.Add(cell); 
-                    }
-                }
-            }
+                    // Exclude current cell and cells outside of the grid.
+                    if ((xOffset != 0 || yOffset != 0) && IsPointOnGrid(x + xOffset, y + yOffset))
+                        neighbors.Add(GetCell(x + xOffset, y + yOffset));
 
             return neighbors;
+        }
+
+        public IEnumerable<Cell> GetAllCells()
+        {
+            foreach (Cell cell in Grid)
+                yield return cell;
         }
     }
 }
