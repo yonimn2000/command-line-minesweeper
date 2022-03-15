@@ -2,13 +2,13 @@
 
 namespace YonatanMankovich.CommandLineMinesweeper.Core
 {
-    internal class CellsGrid
+    public class CellsGrid
     {
         public int Width => Grid.GetLength(0);
         public int Height => Grid.GetLength(1);
         private Cell[,] Grid { get; }
 
-        public CellsGrid(int width, int height)
+        internal CellsGrid(int width, int height)
         {
             Grid = new Cell[width, height];
             for (int y = 0; y < height; y++)
@@ -29,7 +29,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             return x >= 0 && x < Width && y >= 0 && y < Height;
         }
 
-        public List<Cell> GetNeighboringCells(int x, int y)
+        internal List<Cell> GetNeighboringCells(int x, int y)
         {
             List<Cell> neighbors = new List<Cell>(8); // Max 8 neighbors.
 
@@ -43,7 +43,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             return neighbors;
         }
 
-        public IEnumerable<Cell> GetAllCells()
+        internal IEnumerable<Cell> GetAllCells()
         {
             foreach (Cell cell in Grid)
                 yield return cell;

@@ -1,15 +1,20 @@
-﻿namespace YonatanMankovich.CommandLineMinesweeper.Core
+﻿using YonatanMankovich.CommandLineMinesweeper.Core.Enums;
+
+namespace YonatanMankovich.CommandLineMinesweeper.Core
 {
     internal class Board
     {
-        public CellsGrid Grid { get; }
+        internal CellsGrid Grid { get; }
 
-        public Board(BoardOptions options)
+        internal Board(BoardOptions options)
         {
             // Create a grid of untouched cells.
             Grid = new CellsGrid(options.Width, options.Height);
+            PlaceRandomMines(options);
+        }
 
-            // Place mines on board randomly.
+        private void PlaceRandomMines(BoardOptions options)
+        {
             Random random = new Random();
             int numberOfMinesToPlace = options.GetNumberOfMines();
             for (int numberOfMinesPlaced = 0; numberOfMinesPlaced < numberOfMinesToPlace; numberOfMinesPlaced++)
@@ -24,44 +29,53 @@
                 {
                     cell.IsMine = true;
                     foreach (Cell neighbor in Grid.GetNeighboringCells(x, y))
-                        neighbor.NumberOfMinesAround++;
+                        neighbor.IncrementMinesAround();
                 }
             }
         }
 
-        public bool RevealCell(int x, int y)
+        internal CellRevealResult RevealCell(int x, int y)
         {
+            Cell selectedCell = Grid.GetCell(x, y);
+            CellRevealResult cellRevealResult = selectedCell.Reveal();
+
+            if (cellRevealResult != CellRevealResult.Clear)
+                return cellRevealResult;
+
             Queue<Cell> cellsToReveal = new Queue<Cell>();
-            cellsToReveal.Enqueue(Grid.GetCell(x, y));
+            cellsToReveal.Enqueue(selectedCell);
 
             while (cellsToReveal.Count > 0)
             {
                 Cell cell = cellsToReveal.Dequeue();
-                if (cell.Reveal())
-                    return true;
+                cell.Reveal();
 
-                if (cell.NumberOfMinesAround == 0)
-                    foreach (Cell neighbor in Grid.GetNeighboringCells(cell.Coordinates.X, cell.Coordinates.Y)
-                        .Where(n => !n.IsMine && n.State == CellState.Untouched))
-                    {
-                        if (neighbor.NumberOfMinesAround == 0)
-                            cellsToReveal.Enqueue(neighbor);
-                        else
-                            neighbor.Reveal();
-                    }
+                // If has one or more mines around, do not reveal cells around.
+                if (cell.MinesAround != 0)
+                    continue;
+
+                // Reveal all cells around blank cells around the current cell.
+                foreach (Cell neighbor in Grid.GetNeighboringCells(cell.Coordinates.X, cell.Coordinates.Y)
+                    .Where(n => n.State == CellState.Untouched))
+                {
+                    if (neighbor.MinesAround == 0)
+                        cellsToReveal.Enqueue(neighbor);
+                    else
+                        neighbor.Reveal();
+                }
             }
 
-            return Grid.GetCell(x, y).Reveal();
+            return cellRevealResult;
         }
 
-        public int CountFlags()
+        internal int CountFlags()
         {
             return Grid.GetAllCells().Count(c => c.State == CellState.Flagged);
         }
 
-        public bool IsFieldClear()
+        internal bool IsFieldClear()
         {
-            return Grid.GetAllCells().Any(c => c.State != CellState.Revealed && !c.IsMine);
+            return !Grid.GetAllCells().Any(c => c.State != CellState.Revealed && !c.IsMine);
         }
     }
 }

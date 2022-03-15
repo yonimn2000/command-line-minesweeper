@@ -1,33 +1,38 @@
 ﻿using System.Drawing;
+using YonatanMankovich.CommandLineMinesweeper.Core.Enums;
 
 namespace YonatanMankovich.CommandLineMinesweeper.Core
 {
-    internal class Cell
+    public class Cell
     {
-        public Point Coordinates { get; set; }
-        public CellState State { get; set; } = CellState.Untouched;
-        public bool IsMine { get; set; } = false;
-        public int NumberOfMinesAround { get; set; } = 0;
+        public Point Coordinates { get; }
+        public CellState State { get; private set; }
+        public bool IsMine { get; internal set; }
+        public int MinesAround { get; private set; }
 
-        public Cell(Point coordinates)
+        internal Cell(Point coordinates)
         {
             Coordinates = coordinates;
+            State = CellState.Untouched;
+            IsMine = false;
+            MinesAround = 0;
         }
 
-        public bool Reveal() // True if revealed a mine.
+        internal void IncrementMinesAround() => MinesAround++;
+
+        internal CellRevealResult Reveal()
         {
-            if (State == CellState.Untouched)
-            {
-                if (IsMine)
-                    return true;
+            if (IsMine)
+                return CellRevealResult.Mine;
 
-                State = CellState.Revealed;
-            }
+            if (State != CellState.Untouched)
+                return CellRevealResult.Invalid;
 
-            return false;
+            State = CellState.Revealed;
+            return CellRevealResult.Clear;
         }
 
-        public void ToggleFlag()
+        internal void ToggleFlag()
         {
             if (State == CellState.Untouched)
                 State = CellState.Flagged;
