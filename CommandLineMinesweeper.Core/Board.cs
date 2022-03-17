@@ -15,22 +15,12 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
 
         private void PlaceRandomMines(BoardOptions options)
         {
-            Random random = new Random();
-            int numberOfMinesToPlace = options.GetNumberOfMines();
-            for (int numberOfMinesPlaced = 0; numberOfMinesPlaced < numberOfMinesToPlace; numberOfMinesPlaced++)
+            // Shuffle all cells and take as many as the number of mines to place.
+            foreach (Cell cell in Grid.GetAllCells().OrderBy(c => Guid.NewGuid()).Take(options.GetNumberOfMines()))
             {
-                int x = random.Next(options.Width);
-                int y = random.Next(options.Height);
-                Cell cell = Grid.GetCell(x, y);
-
-                if (cell.IsMine) // If there is already a mine on the cell,
-                    numberOfMinesPlaced--; // Ignore the current iteration.
-                else
-                {
-                    cell.IsMine = true;
-                    foreach (Cell neighbor in Grid.GetNeighboringCells(x, y))
-                        neighbor.IncrementMinesAround();
-                }
+                cell.IsMine = true;
+                foreach (Cell neighbor in Grid.GetNeighboringCells(cell.Coordinates.X, cell.Coordinates.Y))
+                    neighbor.IncrementMinesAround();
             }
         }
 
