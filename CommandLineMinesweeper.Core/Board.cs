@@ -19,7 +19,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             foreach (Cell cell in Grid.GetAllCells().OrderBy(c => Guid.NewGuid()).Take(options.GetNumberOfMines()))
             {
                 cell.IsMine = true;
-                foreach (Cell neighbor in Grid.GetNeighboringCells(cell.Coordinates.X, cell.Coordinates.Y))
+                foreach (Cell neighbor in Grid.GetNeighborsOfCell(cell))
                     neighbor.IncrementMinesAround();
             }
         }
@@ -45,7 +45,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
                     continue;
 
                 // Reveal all cells around blank cells around the current cell.
-                foreach (Cell neighbor in Grid.GetNeighboringCells(cell.Coordinates.X, cell.Coordinates.Y)
+                foreach (Cell neighbor in Grid.GetNeighborsOfCell(cell)
                     .Where(n => n.State == CellState.Untouched))
                 {
                     if (neighbor.MinesAround == 0)
@@ -56,6 +56,11 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             }
 
             return cellRevealResult;
+        }
+
+        internal void ToggleCellFlag(int x, int y)
+        {
+            Grid.GetCell(x, y).ToggleFlag();
         }
 
         internal int CountFlags()

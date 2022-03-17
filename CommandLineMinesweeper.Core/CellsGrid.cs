@@ -29,7 +29,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             return x >= 0 && x < Width && y >= 0 && y < Height;
         }
 
-        internal List<Cell> GetNeighboringCells(int x, int y)
+        internal List<Cell> GetNeighborsOfCell(Cell cell)
         {
             List<Cell> neighbors = new List<Cell>(8); // Max 8 neighbors.
 
@@ -37,8 +37,8 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             for (int xOffset = -1; xOffset < 2; xOffset++)
                 for (int yOffset = -1; yOffset < 2; yOffset++)
                     // Exclude current cell and cells outside of the grid.
-                    if ((xOffset != 0 || yOffset != 0) && IsPointOnGrid(x + xOffset, y + yOffset))
-                        neighbors.Add(GetCell(x + xOffset, y + yOffset));
+                    if ((xOffset != 0 || yOffset != 0) && IsPointOnGrid(cell.Coordinates.X + xOffset, cell.Coordinates.Y + yOffset))
+                        neighbors.Add(GetCell(cell.Coordinates.X + xOffset, cell.Coordinates.Y + yOffset));
 
             return neighbors;
         }

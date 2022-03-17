@@ -22,11 +22,11 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
 
         internal CellRevealResult Reveal()
         {
+            if (State == CellState.Flagged || State == CellState.Revealed)
+                return CellRevealResult.Invalid;
+
             if (IsMine)
                 return CellRevealResult.Mine;
-
-            if (State != CellState.Untouched)
-                return CellRevealResult.Invalid;
 
             State = CellState.Revealed;
             return CellRevealResult.Clear;
