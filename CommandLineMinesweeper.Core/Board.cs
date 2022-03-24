@@ -29,29 +29,31 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             Cell selectedCell = Grid.GetCell(x, y);
             CellRevealResult cellRevealResult = selectedCell.Reveal();
 
-            if (cellRevealResult != CellRevealResult.Clear)
+            if (cellRevealResult == CellRevealResult.Invalid || cellRevealResult == CellRevealResult.Mine)
                 return cellRevealResult;
 
-            Queue<Cell> cellsToReveal = new Queue<Cell>();
-            cellsToReveal.Enqueue(selectedCell);
-
-            while (cellsToReveal.Count > 0)
+            // Expand blank area around blank cell.
+            if (selectedCell.MinesAround == 0)
             {
-                Cell cell = cellsToReveal.Dequeue();
-                cell.Reveal();
+                Queue<Cell> cellsToReveal = new Queue<Cell>();
+                cellsToReveal.Enqueue(selectedCell);
 
-                // If has one or more mines around, do not reveal cells around.
-                if (cell.MinesAround != 0)
-                    continue;
-
-                // Reveal all cells around blank cells around the current cell.
-                foreach (Cell neighbor in Grid.GetNeighborsOfCell(cell)
-                    .Where(n => n.State == CellState.Untouched))
+                while (cellsToReveal.Count > 0)
                 {
-                    if (neighbor.MinesAround == 0)
-                        cellsToReveal.Enqueue(neighbor);
-                    else
-                        neighbor.Reveal();
+                    Cell cell = cellsToReveal.Dequeue();
+
+                    // Foreach untouched neighbor of the current cell...
+                    foreach (Cell neighbor in Grid.GetNeighborsOfCell(cell)
+                        .Where(n => n.State == CellState.Untouched))
+                    {
+                        // Reveal neighbor and enqueue if blank.
+                        CellRevealResult neighborRevealResult = neighbor.Reveal();
+                        if (neighborRevealResult != CellRevealResult.Clear)
+                            throw new Exception($"Unexpected cell reveal result. Expected {CellRevealResult.Clear}; Got {neighborRevealResult}");
+
+                        if (neighbor.MinesAround == 0)
+                            cellsToReveal.Enqueue(neighbor);
+                    }
                 }
             }
 
