@@ -8,6 +8,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
         public int Height => Grid.GetLength(1);
         private Cell[,] Grid { get; }
 
+        // Creates a grid of untouched cells.
         internal CellsGrid(int width, int height)
         {
             Grid = new Cell[width, height];
@@ -29,9 +30,9 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             return x >= 0 && x < Width && y >= 0 && y < Height;
         }
 
-        internal List<Cell> GetNeighborsOfCell(Cell cell)
+        internal ISet<Cell> GetNeighborsOfCell(Cell cell)
         {
-            List<Cell> neighbors = new List<Cell>(8); // Max 8 neighbors.
+            ISet<Cell> neighbors = new HashSet<Cell>(8); // Max 8 neighbors.
 
             // Add all neighbors around the current cell.
             for (int xOffset = -1; xOffset < 2; xOffset++)

@@ -39,40 +39,5 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
         {
             return Grid.GetAllCells().Where(c => c.State == CellState.Untouched);
         }
-
-        public ISet<Cell> GetSureMineCells()
-        {
-            ISet<Cell> mineCells = new HashSet<Cell>();
-
-            foreach (Cell cell in GetAllRevealedNumberedCells())
-            {
-                List<Cell> neighbors = Grid.GetNeighborsOfCell(cell);
-                IList<Cell> untouchedNeighbors = neighbors.Where(n => n.State == CellState.Untouched).ToList();
-                int flaggedNeighbors = neighbors.Count(n => n.State == CellState.Flagged);
-                if (untouchedNeighbors.Count + flaggedNeighbors == cell.MinesAround)
-                    foreach (Cell neighbor in untouchedNeighbors)
-                        mineCells.Add(neighbor);
-            }
-
-            return mineCells;
-        }
-
-        public ISet<Cell> GetSureClearCells()
-        {
-            ISet<Cell> clearCells = new HashSet<Cell>();
-
-            foreach (Cell cell in GetAllRevealedNumberedCells())
-            {
-                List<Cell> neighbors = Grid.GetNeighborsOfCell(cell);
-                if (neighbors.Count(n => n.State == CellState.Flagged) == cell.MinesAround)
-                    foreach (Cell neighbor in neighbors.Where(n => n.State == CellState.Untouched))
-                        clearCells.Add(neighbor);
-            }
-
-            return clearCells;
-        }
-
-        private IEnumerable<Cell> GetAllRevealedNumberedCells()
-            => Grid.GetAllCells().Where(c => c.State == CellState.Revealed && c.MinesAround > 0);
     }
 }
