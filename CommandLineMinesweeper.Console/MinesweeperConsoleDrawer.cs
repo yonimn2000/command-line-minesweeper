@@ -29,20 +29,35 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
                 for (int x = 0; x < Minesweeper.Grid.Width; x++)
                 {
                     Cell cell = Minesweeper.Grid.GetCell(x, y);
+                    char symbol = ' ';
+                    ConsoleColor textColor = ConsoleColor.Black;
+                    ConsoleColor backColor = ConsoleColor.DarkGray;
 
                     if (cell.IsMine && drawOption == MinesweeperDrawOption.AllClear)
-                        ConsoleDrawer.WriteInColor("# ", ConsoleColor.Green, ConsoleColor.Black);
-                    else if (cell.IsMine && cell.Coordinates == HitMineCoordinates && drawOption == MinesweeperDrawOption.ShowHitMine)
-                        ConsoleDrawer.WriteInColor("# ", ConsoleColor.Yellow, ConsoleColor.Black);
-                    else if (cell.State == CellState.Flagged)
-                        ConsoleDrawer.WriteInColor("F ", ConsoleColor.Magenta, ConsoleColor.Black);
-                    else if (cell.IsMine && (drawOption == MinesweeperDrawOption.ShowEverything || drawOption == MinesweeperDrawOption.ShowHitMine))
-                        ConsoleDrawer.WriteInColor("# ", ConsoleColor.Red, ConsoleColor.Black);
-                    else if (cell.MinesAround == 0 && (drawOption == MinesweeperDrawOption.ShowEverything || cell.State == CellState.Revealed))
-                        ConsoleDrawer.WriteInColor("  ", ConsoleColor.Gray, ConsoleColor.Black);
-                    else if (cell.MinesAround > 0 && (drawOption == MinesweeperDrawOption.ShowEverything || cell.State == CellState.Revealed))
                     {
-                        ConsoleColor textColor = ConsoleColor.White;
+                        symbol = '#';
+                        backColor = ConsoleColor.Green;
+                    }
+                    else if (cell.IsMine && cell.Coordinates == HitMineCoordinates && drawOption == MinesweeperDrawOption.ShowHitMine)
+                    {
+                        symbol = '#';
+                        backColor = ConsoleColor.Yellow;
+                    }
+                    else if (cell.State == CellState.Flagged)
+                    {
+                        symbol = 'F';
+                        backColor = ConsoleColor.Magenta;
+                    }
+                    else if (cell.IsMine && (drawOption == MinesweeperDrawOption.ShowEverything || drawOption == MinesweeperDrawOption.ShowHitMine))
+                    {
+                        symbol = '#';
+                        backColor = ConsoleColor.Red;
+                    }
+                    else if (cell.MinesAround == 0 && (drawOption == MinesweeperDrawOption.ShowEverything || cell.State == CellState.Revealed))
+                    {
+                        backColor = ConsoleColor.Gray;
+                    } else if (cell.MinesAround > 0 && (drawOption == MinesweeperDrawOption.ShowEverything || cell.State == CellState.Revealed))
+                    {
                         switch (cell.MinesAround)
                         {
                             case 1: textColor = ConsoleColor.Blue; break;
@@ -54,12 +69,15 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
                             case 7: textColor = ConsoleColor.Black; break;
                             case 8: textColor = ConsoleColor.DarkGray; break;
                         }
-                        ConsoleDrawer.WriteInColor(cell.MinesAround + " ", ConsoleColor.Gray, textColor);
+                        backColor = ConsoleColor.Gray;
+                        symbol = (char)(cell.MinesAround + 48); // ASCII '0' is 48, '1' is 49, and so on.
                     }
                     else if (cell.Coordinates == SelectedCoordinates)
-                        ConsoleDrawer.WriteInColor("  ", ConsoleColor.Yellow, ConsoleColor.White);
-                    else
-                        ConsoleDrawer.WriteInColor("  ", ConsoleColor.DarkGray, ConsoleColor.White);
+                    {
+                        backColor = ConsoleColor.Yellow;
+                    }
+
+                    ConsoleDrawer.WriteInColor(symbol + " ", backColor, textColor);
                 }
                 System.Console.WriteLine();
             }
