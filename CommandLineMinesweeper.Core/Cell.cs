@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using YonatanMankovich.CommandLineMinesweeper.Core.Enums;
+using YonatanMankovich.CommandLineMinesweeper.Core.Exceptions;
 
 namespace YonatanMankovich.CommandLineMinesweeper.Core
 {
@@ -20,24 +21,51 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
 
         internal void IncrementMinesAround() => MinesAround++;
 
-        internal CellRevealResult Reveal()
+        internal void Reveal()
         {
-            if (State == CellState.Flagged || State == CellState.Revealed)
-                return CellRevealResult.Invalid;
+            if (State == CellState.Revealed)
+                throw new RevealRevealedCellException(this);
+
+            if (State == CellState.Flagged)
+                throw new FlaggedCellRevealException(this);
 
             if (IsMine)
-                return CellRevealResult.Mine;
+                throw new RevealedMineException(this);
 
             State = CellState.Revealed;
-            return CellRevealResult.Clear;
+        }
+
+        internal void PlaceFlag()
+        {
+            switch (State)
+            {
+                case CellState.Untouched: State = CellState.Flagged; break;
+                case CellState.Revealed: throw new CellFlagException("Attempted to place a flag at a revealed cell.", this);
+                case CellState.Flagged: throw new CellFlagException("Attempted to place an already placed flag.", this);
+                default: throw new NotImplementedException();
+            }
+        }
+
+        internal void RemoveFlag()
+        {
+            switch (State)
+            {
+                case CellState.Untouched: throw new CellFlagException("Attempted to remove an already removed flag.", this);
+                case CellState.Revealed: throw new CellFlagException("Attempted to remove a flag at a revealed cell.", this);
+                case CellState.Flagged: State = CellState.Untouched; break;
+                default: throw new NotImplementedException();
+            }
         }
 
         internal void ToggleFlag()
         {
-            if (State == CellState.Untouched)
-                State = CellState.Flagged;
-            else if (State == CellState.Flagged)
-                State = CellState.Untouched;
+            switch (State)
+            {
+                case CellState.Untouched: PlaceFlag(); break;
+                case CellState.Revealed: throw new CellFlagException("Attempted to toggle a flag at a revealed cell.", this);
+                case CellState.Flagged: RemoveFlag(); break;
+                default: throw new NotImplementedException();
+            }
         }
     }
 }
