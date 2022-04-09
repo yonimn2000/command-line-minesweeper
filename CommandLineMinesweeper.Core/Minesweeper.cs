@@ -1,4 +1,5 @@
-﻿using YonatanMankovich.CommandLineMinesweeper.Core.Enums;
+﻿using System.Drawing;
+using YonatanMankovich.CommandLineMinesweeper.Core.Enums;
 using YonatanMankovich.CommandLineMinesweeper.Core.Exceptions;
 
 namespace YonatanMankovich.CommandLineMinesweeper.Core
@@ -29,49 +30,78 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             }
         }
 
-        public GameMoveResult RevealCell(int x, int y)
+        public MinesweeperMoveResult MakeMove(MinesweeperMove move) => MakeMove(move.MoveType, move.Coordinates);
+        public MinesweeperMoveResult MakeMove(MinesweeperMoveType moveType, int x, int y) => MakeMove(moveType, new Point(x, y));
+        public MinesweeperMoveResult MakeMove(MinesweeperMoveType moveType, Point coordinates)
         {
             try
             {
-                Cell selectedCell = Grid.GetCell(x, y);
-                selectedCell.Reveal();
-
-                // Expand blank area around blank cell.
-                if (selectedCell.MinesAround == 0)
+                switch (moveType)
                 {
-                    Queue<Cell> cellsToReveal = new Queue<Cell>();
-                    cellsToReveal.Enqueue(selectedCell);
-
-                    while (cellsToReveal.Count > 0)
-                    {
-                        Cell cell = cellsToReveal.Dequeue();
-
-                        // For each untouched neighbor of the current cell...
-                        foreach (Cell neighbor in Grid.GetNeighborsOfCell(cell)
-                            .Where(n => n.State == CellState.Untouched))
-                        {
-                            // Reveal neighbor and enqueue if blank.
-                            neighbor.Reveal();
-
-                            if (neighbor.MinesAround == 0)
-                                cellsToReveal.Enqueue(neighbor);
-                        }
-                    }
+                    case MinesweeperMoveType.PlaceFlag: PlaceCellFlag(coordinates); break;
+                    case MinesweeperMoveType.RemoveFlag: RemoveCellFlag(coordinates); break;
+                    case MinesweeperMoveType.ToggleFlag: ToggleCellFlag(coordinates); break;
+                    case MinesweeperMoveType.Reveal: RevealCell(coordinates); break;
+                    default: throw new NotImplementedException();
                 }
             }
             catch (RevealedMineException)
             {
-                return GameMoveResult.RevealedMine;
+                return MinesweeperMoveResult.RevealedMine;
             }
             catch (CellException ce) when (ce is FlaggedCellRevealException || ce is RevealRevealedCellException)
             {
-                return GameMoveResult.InvalidMove;
+                return MinesweeperMoveResult.InvalidMove;
             }
 
             if (IsFieldClear())
-                return GameMoveResult.AllClear;
+                return MinesweeperMoveResult.AllClear;
 
-            return GameMoveResult.Playing;
+            return MinesweeperMoveResult.Playing;
+        }
+
+        private void PlaceCellFlag(Point point)
+        {
+            Grid.GetCell(point).PlaceFlag();
+        }
+
+        private void RemoveCellFlag(Point point)
+        {
+            Grid.GetCell(point).RemoveFlag();
+        }
+
+        private void ToggleCellFlag(Point point)
+        {
+            Grid.GetCell(point).ToggleFlag();
+        }
+
+        private void RevealCell(Point point)
+        {
+            Cell selectedCell = Grid.GetCell(point);
+            selectedCell.Reveal();
+
+            // Expand blank area around blank cell.
+            if (selectedCell.MinesAround == 0)
+            {
+                Queue<Cell> cellsToReveal = new Queue<Cell>();
+                cellsToReveal.Enqueue(selectedCell);
+
+                while (cellsToReveal.Count > 0)
+                {
+                    Cell cell = cellsToReveal.Dequeue();
+
+                    // For each untouched neighbor of the current cell...
+                    foreach (Cell neighbor in Grid.GetNeighborsOfCell(cell)
+                        .Where(n => n.State == CellState.Untouched))
+                    {
+                        // Reveal neighbor and enqueue if blank.
+                        neighbor.Reveal();
+
+                        if (neighbor.MinesAround == 0)
+                            cellsToReveal.Enqueue(neighbor);
+                    }
+                }
+            }
         }
 
         public int CountFlags()
@@ -84,26 +114,17 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             return !Grid.GetAllCells().Any(c => c.State != CellState.Revealed && !c.IsMine);
         }
 
-        public void PlaceCellFlag(int x, int y)
-        {
-            Grid.GetCell(x, y).PlaceFlag();
-        }
-
-        public void RemoveCellFlag(int x, int y)
-        {
-            Grid.GetCell(x, y).RemoveFlag();
-        }
-
-        public void ToggleCellFlag(int x, int y)
-        {
-            Grid.GetCell(x, y).ToggleFlag();
-        }
-
         public int GetNumberOfRemainingMines() => IsFieldClear() ? 0 : TotalMines - CountFlags();
 
         public double GetGameCompleteness()
             => IsFieldClear() ? 1 : 1 - ((double)GetUntouchedCells().Count() / (Grid.Width * Grid.Height));
 
         public IEnumerable<Cell> GetUntouchedCells() => Grid.GetAllCells().Where(c => c.State == CellState.Untouched);
+
+        public void Reset()
+        {
+            foreach (Cell cell in Grid.GetAllCells())
+                cell.ClearState();
+        }
     }
 }

@@ -25,6 +25,11 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             throw new IndexOutOfRangeException("The provided point coordinates were outside of the grid.");
         }
 
+        public Cell GetCell(Point point)
+        {
+            return GetCell(point.X, point.Y);
+        }
+
         public bool IsPointOnGrid(int x, int y)
         {
             return x >= 0 && x < Width && y >= 0 && y < Height;

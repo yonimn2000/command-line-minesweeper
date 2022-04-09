@@ -1,17 +1,71 @@
-﻿using YonatanMankovich.CommandLineMinesweeper.Core.Enums;
+﻿using System.Drawing;
+using YonatanMankovich.CommandLineMinesweeper.Core.Enums;
+using YonatanMankovich.CommandLineMinesweeper.Core.Exceptions;
 
 namespace YonatanMankovich.CommandLineMinesweeper.Core
 {
     public class MinesweeperAutoPlayer
     {
-        public Minesweeper Minesweeper { get; set; }
+        public Minesweeper Minesweeper { get; private set; }
+        public Action DrawBoardCallback { get; set; }
+        public MinesweeperMoveResult LastMoveResult { get; private set; }
+        public Point LastMoveCoordinates { get; private set; }
+        private int? RandomSeed { get; }
 
-        public MinesweeperAutoPlayer(Minesweeper minesweeper)
+        public MinesweeperAutoPlayer(Minesweeper minesweeper, int? randomSeed = null)
         {
             Minesweeper = minesweeper;
+            RandomSeed = randomSeed;
+            LastMoveResult = MinesweeperMoveResult.Playing;
+            LastMoveCoordinates = default;
         }
 
-        public ISet<Cell> GetSureMineCells()
+        public void PlayToEnd()
+        {
+            Random random = RandomSeed == null ? new Random() : new Random((int)RandomSeed);
+            while (LastMoveResult != MinesweeperMoveResult.RevealedMine && LastMoveResult != MinesweeperMoveResult.AllClear)
+            {
+                ISet<Cell> sureMineCells = GetSureMineCells(includeAdvanced: true);
+                ISet<Cell> sureClearCells = GetSureClearCells(includeAdvanced: true);
+                if (sureMineCells.Count == 0 && sureClearCells.Count == 0)
+                {
+                    // Select a random untouched cell.
+                    Cell? randomUntouchedCell = Minesweeper.GetUntouchedCells().OrderBy(c => random.Next()).FirstOrDefault();
+                    if (randomUntouchedCell == null)
+                        LastMoveResult = MinesweeperMoveResult.AllClear;
+                    else
+                    {
+                        LastMoveCoordinates = randomUntouchedCell.Coordinates;
+                        LastMoveResult = Minesweeper.MakeMove(MinesweeperMoveType.Reveal, randomUntouchedCell.Coordinates);
+                        DrawBoardCallback?.Invoke();
+                    }
+                }
+
+                foreach (Point point in sureMineCells.Select(c => c.Coordinates))
+                {
+                    LastMoveCoordinates = point;
+                    LastMoveResult = Minesweeper.MakeMove(MinesweeperMoveType.PlaceFlag, point);
+                    DrawBoardCallback?.Invoke();
+                }
+
+                foreach (Point point in sureClearCells.Select(c => c.Coordinates))
+                {
+                    LastMoveCoordinates = point;
+                    LastMoveResult = Minesweeper.MakeMove(MinesweeperMoveType.Reveal, point);
+                    DrawBoardCallback?.Invoke();
+                }
+            }
+            DrawBoardCallback?.Invoke();
+        }
+
+        public void Reset()
+        {
+            Minesweeper.Reset();
+            LastMoveResult = MinesweeperMoveResult.Playing;
+            LastMoveCoordinates = default;
+        }
+
+        public ISet<Cell> GetSureMineCells(bool includeAdvanced = false)
         {
             ISet<Cell> mineCells = new HashSet<Cell>();
 
@@ -24,11 +78,14 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
                     foreach (Cell neighbor in untouchedNeighbors)
                     {
                         if (!neighbor.IsMine) // In case the algorithm is wrong.
-                            throw new Exception("Tried to add a clear cell into mine cells list.");
+                            throw new CellException("Tried to add a clear cell into mine cells list.", neighbor);
 
                         mineCells.Add(neighbor);
                     }
             }
+
+            if (mineCells.Count == 0 && includeAdvanced)
+                return GetAdvancedSureMineCells();
 
             return mineCells;
         }
@@ -67,7 +124,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
                     foreach (Cell mineCell in mineCellsAroundNeighbor)
                     {
                         if (!mineCell.IsMine) // In case the algorithm is wrong.
-                            throw new Exception("Tried to add a clear cell into mine cells list.");
+                            throw new CellException("Tried to add a clear cell into mine cells list.", mineCell);
 
                         mineCells.Add(mineCell);
                     }
@@ -77,7 +134,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             return mineCells;
         }
 
-        public ISet<Cell> GetSureClearCells()
+        public ISet<Cell> GetSureClearCells(bool includeAdvanced = false)
         {
             ISet<Cell> clearCells = new HashSet<Cell>();
 
@@ -88,11 +145,14 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
                     foreach (Cell neighbor in neighbors.Where(n => n.State == CellState.Untouched))
                     {
                         if (neighbor.IsMine) // In case the algorithm is wrong.
-                            throw new Exception("Tried to add a mine into clear cells list.");
+                            throw new CellException("Tried to add a mine into clear cells list.", neighbor);
 
                         clearCells.Add(neighbor);
                     }
             }
+
+            if (clearCells.Count == 0 && includeAdvanced)
+                return GetAdvancedSureClearCells();
 
             return clearCells;
         }
@@ -131,7 +191,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
                     foreach (Cell clearCell in clearCellsAroundNeighbor)
                     {
                         if (clearCell.IsMine) // In case the algorithm is wrong.
-                            throw new Exception("Tried to add a mine into clear cells list.");
+                            throw new CellException("Tried to add a mine into clear cells list.", clearCell);
 
                         clearCells.Add(clearCell);
                     }

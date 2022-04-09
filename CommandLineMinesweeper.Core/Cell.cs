@@ -67,5 +67,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
                 default: throw new NotImplementedException();
             }
         }
+
+        internal void ClearState() => State = CellState.Untouched;
     }
 }
