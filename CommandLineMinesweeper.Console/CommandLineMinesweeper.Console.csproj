@@ -15,4 +15,10 @@
     <ProjectReference Include="..\CommandLineMinesweeper.Core\CommandLineMinesweeper.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="YonatanMankovich.ConsoleDiffWriter">
+      <HintPath>..\..\..\Libraries\ConsoleDiffWriter\ConsoleDiffWriter\bin\Debug\net6.0\YonatanMankovich.ConsoleDiffWriter.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

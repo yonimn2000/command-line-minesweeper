@@ -7,7 +7,9 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
     public class MinesweeperAutoPlayer
     {
         public Minesweeper Minesweeper { get; private set; }
-        public Action DrawBoardCallback { get; set; }
+        public Action AfterMoveCallback { get; set; }
+        public Action AfterRevealedMineCallback { get; set; }
+        public Action AfterFieldClearedCallback { get; set; }
         public MinesweeperMoveResult LastMoveResult { get; private set; }
         public Point LastMoveCoordinates { get; private set; }
         private int? RandomSeed { get; }
@@ -37,7 +39,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
                     {
                         LastMoveCoordinates = randomUntouchedCell.Coordinates;
                         LastMoveResult = Minesweeper.MakeMove(MinesweeperMoveType.Reveal, randomUntouchedCell.Coordinates);
-                        DrawBoardCallback?.Invoke();
+                        AfterMoveCallback?.Invoke();
                     }
                 }
 
@@ -45,17 +47,21 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
                 {
                     LastMoveCoordinates = point;
                     LastMoveResult = Minesweeper.MakeMove(MinesweeperMoveType.PlaceFlag, point);
-                    DrawBoardCallback?.Invoke();
+                    AfterMoveCallback?.Invoke();
                 }
 
                 foreach (Point point in sureClearCells.Select(c => c.Coordinates))
                 {
                     LastMoveCoordinates = point;
                     LastMoveResult = Minesweeper.MakeMove(MinesweeperMoveType.Reveal, point);
-                    DrawBoardCallback?.Invoke();
+                    AfterMoveCallback?.Invoke();
                 }
             }
-            DrawBoardCallback?.Invoke();
+
+            if (LastMoveResult == MinesweeperMoveResult.RevealedMine)
+                AfterRevealedMineCallback?.Invoke();
+            else if (LastMoveResult == MinesweeperMoveResult.AllClear)
+                AfterFieldClearedCallback?.Invoke();
         }
 
         public void Reset()

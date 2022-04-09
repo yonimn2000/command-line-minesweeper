@@ -1,52 +1,33 @@
-﻿using System.Drawing;
-using YonatanMankovich.CommandLineMinesweeper.Console;
+﻿using YonatanMankovich.CommandLineMinesweeper.Console;
 using YonatanMankovich.CommandLineMinesweeper.Core;
-using YonatanMankovich.CommandLineMinesweeper.Core.Enums;
+using YonatanMankovich.ConsoleDiffWriter.Data;
 
+Console.Title = "Yonatan's Command Line Minesweeper";
 Console.CursorVisible = false;
+
 Console.WriteLine("Welcome to Yonatan's command line Minesweeper game!\n");
 
 Minesweeper game = new Minesweeper(new BoardOptions());
-MinesweeperConsoleDrawer drawer = new MinesweeperConsoleDrawer(game);
-drawer.ConsoleLine = Console.CursorTop;
-drawer.Draw(MinesweeperDrawOption.ShowEverything);
-Thread.Sleep(1000);
+MinesweeperConsoleDrawer drawer = new MinesweeperConsoleDrawer(game, Console.CursorTop);
 
-GameMoveResult lastMoveResult = GameMoveResult.Playing;
-Point lastMoveCoordinates = default;
-//drawer.SelectedCoordinates = new Point(5, 5); // TODO
-while (lastMoveResult != GameMoveResult.RevealedMine && lastMoveResult != GameMoveResult.AllClear)
+MinesweeperAutoPlayer autoPlayer = new MinesweeperAutoPlayer(game);
+int msDelayBetweenMoves = 50;
+
+drawer.Draw();
+autoPlayer.AfterMoveCallback = () =>
 {
-    if (!game.GetSureMineCells().Any() && !game.GetSureClearCells().Any())
-    {
-        Cell randomUntouchedCell = game.GetUntouchedCells().OrderBy(c => Guid.NewGuid()).First();
-        lastMoveCoordinates = randomUntouchedCell.Coordinates;
-        lastMoveResult = game.RevealCell(lastMoveCoordinates.X, lastMoveCoordinates.Y);
-        drawer.Draw();
-    }
-
-    foreach (Point point in game.GetSureMineCells().Select(c => c.Coordinates))
-    {
-        game.ToggleCellFlag(point.X, point.Y);
-    }
+    drawer.SelectedCoordinates = autoPlayer.LastMoveCoordinates;
     drawer.Draw();
-
-    foreach (Point point in game.GetSureClearCells().Select(c => c.Coordinates))
-    {
-        lastMoveResult = game.RevealCell(point.X, point.Y);
-    }
-    drawer.Draw();
-}
-
-if (lastMoveResult == GameMoveResult.RevealedMine)
+    Thread.Sleep(msDelayBetweenMoves);
+};
+autoPlayer.AfterRevealedMineCallback = () =>
 {
-    drawer.HitMineCoordinates = lastMoveCoordinates;
-    drawer.Draw(MinesweeperDrawOption.ShowHitMine);
-    Console.WriteLine("BOOM! Game over...");
-}
-
-if (lastMoveResult == GameMoveResult.AllClear)
+    drawer.Draw(MinesweeperDrawOption.ShowMines);
+    new ConsoleString("BOOM! Game over...", ConsoleColor.Black, ConsoleColor.Red).WriteLine();
+};
+autoPlayer.AfterFieldClearedCallback = () =>
 {
     drawer.Draw(MinesweeperDrawOption.AllClear);
-    Console.WriteLine("Field cleared!");
-}
+    new ConsoleString("Field cleared!", ConsoleColor.Black, ConsoleColor.Green).WriteLine();
+};
+autoPlayer.PlayToEnd();

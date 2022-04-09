@@ -1,28 +1,27 @@
 ﻿using System.Drawing;
 using YonatanMankovich.CommandLineMinesweeper.Core;
 using YonatanMankovich.CommandLineMinesweeper.Core.Enums;
+using YonatanMankovich.ConsoleDiffWriter.Data;
+using YonatanMankovich.ConsoleDiffWriter.Diff;
 
 namespace YonatanMankovich.CommandLineMinesweeper.Console
 {
     internal class MinesweeperConsoleDrawer
     {
-        public int? ConsoleLine { get; set; }
-        public Point? HitMineCoordinates { get; set; }
         public Point? SelectedCoordinates { get; set; }
         private Minesweeper Minesweeper { get; }
+        private ConsoleDiffLines DiffLines { get; }
 
-        public MinesweeperConsoleDrawer(Minesweeper minesweeper)
+        public MinesweeperConsoleDrawer(Minesweeper minesweeper, int line = 0)
         {
             Minesweeper = minesweeper;
+            DiffLines = new ConsoleDiffLines(new Point(0, line));
+            DiffLines.FillArea(new Size(Minesweeper.Grid.Width * 2, Minesweeper.Grid.Height), ConsoleColor.DarkGray);
         }
 
         public void Draw(MinesweeperDrawOption drawOption = MinesweeperDrawOption.Normal)
         {
-            if (ConsoleLine != null)
-                System.Console.CursorTop = (int)ConsoleLine;
-
-            if (drawOption == MinesweeperDrawOption.ShowHitMine && HitMineCoordinates == null)
-                throw new InvalidOperationException("HitMineCoordinates must be set before showing its location.");
+            ConsoleLines consoleLines = new ConsoleLines();
 
             for (int y = 0; y < Minesweeper.Grid.Height; y++)
             {
@@ -35,20 +34,15 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
 
                     if (cell.IsMine && drawOption == MinesweeperDrawOption.AllClear)
                     {
-                        symbol = '#';
+                        symbol = 'F';
                         backColor = ConsoleColor.Green;
-                    }
-                    else if (cell.IsMine && cell.Coordinates == HitMineCoordinates && drawOption == MinesweeperDrawOption.ShowHitMine)
-                    {
-                        symbol = '#';
-                        backColor = ConsoleColor.Yellow;
                     }
                     else if (cell.State == CellState.Flagged)
                     {
                         symbol = 'F';
                         backColor = ConsoleColor.Magenta;
                     }
-                    else if (cell.IsMine && (drawOption == MinesweeperDrawOption.ShowEverything || drawOption == MinesweeperDrawOption.ShowHitMine))
+                    else if (cell.IsMine && (drawOption == MinesweeperDrawOption.ShowEverything || drawOption == MinesweeperDrawOption.ShowMines))
                     {
                         symbol = '#';
                         backColor = ConsoleColor.Red;
@@ -56,7 +50,8 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
                     else if (cell.MinesAround == 0 && (drawOption == MinesweeperDrawOption.ShowEverything || cell.State == CellState.Revealed))
                     {
                         backColor = ConsoleColor.Gray;
-                    } else if (cell.MinesAround > 0 && (drawOption == MinesweeperDrawOption.ShowEverything || cell.State == CellState.Revealed))
+                    }
+                    else if (cell.MinesAround > 0 && (drawOption == MinesweeperDrawOption.ShowEverything || cell.State == CellState.Revealed))
                     {
                         switch (cell.MinesAround)
                         {
@@ -72,16 +67,21 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
                         backColor = ConsoleColor.Gray;
                         symbol = (char)(cell.MinesAround + 48); // ASCII '0' is 48, '1' is 49, and so on.
                     }
-                    else if (cell.Coordinates == SelectedCoordinates)
+
+                    if (cell.Coordinates == SelectedCoordinates && drawOption != MinesweeperDrawOption.AllClear)
                     {
                         backColor = ConsoleColor.Yellow;
                     }
 
-                    ConsoleDrawer.WriteInColor(symbol + " ", backColor, textColor);
+                    consoleLines.AddToEndOfLastLine(new ConsoleString(symbol + " ", textColor, backColor));
                 }
-                System.Console.WriteLine();
+                consoleLines.AddLine();
             }
-            System.Console.WriteLine();
+            consoleLines.AddLine(new ConsoleString("Remaining mines: " + Minesweeper.GetNumberOfRemainingMines()));
+            consoleLines.AddLine(new ConsoleString("Game completeness: " + (100 * Minesweeper.GetGameCompleteness()).ToString("N0") + "%"));
+            consoleLines.AddLine();
+            DiffLines.WriteDiff(consoleLines);
+            DiffLines.BringCursorToEnd();
         }
     }
 }

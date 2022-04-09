@@ -4,7 +4,7 @@
     {
         Normal,
         ShowEverything,
-        ShowHitMine,
+        ShowMines,
         AllClear
     }
 }
