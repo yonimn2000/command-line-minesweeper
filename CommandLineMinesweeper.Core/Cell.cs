@@ -19,18 +19,28 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             MinesAround = 0;
         }
 
+        public bool IsValidForMove()
+        {
+            return State == CellState.Untouched || State == CellState.Flagged;
+        }
+
+        public bool IsValidForReveal()
+        {
+            return State == CellState.Untouched;
+        }
+
         internal void IncrementMinesAround() => MinesAround++;
 
         internal void Reveal()
         {
             if (State == CellState.Revealed)
-                throw new RevealRevealedCellException(this);
+                throw new RevealRevealedCellException(cell: this);
 
             if (State == CellState.Flagged)
-                throw new FlaggedCellRevealException(this);
+                throw new FlaggedCellRevealException(cell: this);
 
             if (IsMine)
-                throw new RevealedMineException(this);
+                throw new RevealedMineException(cell: this);
 
             State = CellState.Revealed;
         }
@@ -40,8 +50,8 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             switch (State)
             {
                 case CellState.Untouched: State = CellState.Flagged; break;
-                case CellState.Revealed: throw new CellFlagException("Attempted to place a flag at a revealed cell.", this);
-                case CellState.Flagged: throw new CellFlagException("Attempted to place an already placed flag.", this);
+                case CellState.Revealed: throw new CellFlagException("Attempted to place a flag at a revealed cell.", cell: this);
+                case CellState.Flagged: throw new CellFlagException("Attempted to place an already placed flag.", cell: this);
                 default: throw new NotImplementedException();
             }
         }
@@ -50,8 +60,8 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
         {
             switch (State)
             {
-                case CellState.Untouched: throw new CellFlagException("Attempted to remove an already removed flag.", this);
-                case CellState.Revealed: throw new CellFlagException("Attempted to remove a flag at a revealed cell.", this);
+                case CellState.Untouched: throw new CellFlagException("Attempted to remove an already removed flag.", cell: this);
+                case CellState.Revealed: throw new CellFlagException("Attempted to remove a flag at a revealed cell.", cell: this);
                 case CellState.Flagged: State = CellState.Untouched; break;
                 default: throw new NotImplementedException();
             }
@@ -62,7 +72,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             switch (State)
             {
                 case CellState.Untouched: PlaceFlag(); break;
-                case CellState.Revealed: throw new CellFlagException("Attempted to toggle a flag at a revealed cell.", this);
+                case CellState.Revealed: throw new CellFlagException("Attempted to toggle a flag at a revealed cell.", cell: this);
                 case CellState.Flagged: RemoveFlag(); break;
                 default: throw new NotImplementedException();
             }

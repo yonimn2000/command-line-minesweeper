@@ -5,6 +5,6 @@
         PlaceFlag,
         RemoveFlag,
         ToggleFlag,
-        Reveal
+        RevealCell
     }
 }

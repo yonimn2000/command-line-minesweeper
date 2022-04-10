@@ -29,6 +29,15 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
                     neighbor.IncrementMinesAround();
             }
         }
+        public bool IsCellValidForMove(Point point)
+        {
+            return Grid.GetCell(point).IsValidForMove();
+        }
+
+        public bool IsCellValidForReveal(Point point)
+        {
+            return Grid.GetCell(point).IsValidForReveal();
+        }
 
         public MinesweeperMoveResult MakeMove(MinesweeperMove move) => MakeMove(move.MoveType, move.Coordinates);
         public MinesweeperMoveResult MakeMove(MinesweeperMoveType moveType, int x, int y) => MakeMove(moveType, new Point(x, y));
@@ -41,7 +50,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
                     case MinesweeperMoveType.PlaceFlag: PlaceCellFlag(coordinates); break;
                     case MinesweeperMoveType.RemoveFlag: RemoveCellFlag(coordinates); break;
                     case MinesweeperMoveType.ToggleFlag: ToggleCellFlag(coordinates); break;
-                    case MinesweeperMoveType.Reveal: RevealCell(coordinates); break;
+                    case MinesweeperMoveType.RevealCell: RevealCell(coordinates); break;
                     default: throw new NotImplementedException();
                 }
             }
@@ -49,7 +58,9 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             {
                 return MinesweeperMoveResult.RevealedMine;
             }
-            catch (CellException ce) when (ce is FlaggedCellRevealException || ce is RevealRevealedCellException)
+            catch (CellException ce) when (ce is FlaggedCellRevealException
+                                        || ce is RevealRevealedCellException
+                                        || ce is CellFlagException)
             {
                 return MinesweeperMoveResult.InvalidMove;
             }

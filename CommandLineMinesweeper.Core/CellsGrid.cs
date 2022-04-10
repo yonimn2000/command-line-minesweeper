@@ -30,6 +30,8 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             return GetCell(point.X, point.Y);
         }
 
+        public bool IsPointOnGrid(Point point) => IsPointOnGrid(point.X, point.Y);
+
         public bool IsPointOnGrid(int x, int y)
         {
             return x >= 0 && x < Width && y >= 0 && y < Height;
@@ -49,7 +51,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             return neighbors;
         }
 
-        internal IEnumerable<Cell> GetAllCells()
+        public IEnumerable<Cell> GetAllCells()
         {
             foreach (Cell cell in Grid)
                 yield return cell;

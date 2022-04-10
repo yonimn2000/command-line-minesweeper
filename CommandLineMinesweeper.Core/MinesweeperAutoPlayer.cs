@@ -4,80 +4,68 @@ using YonatanMankovich.CommandLineMinesweeper.Core.Exceptions;
 
 namespace YonatanMankovich.CommandLineMinesweeper.Core
 {
-    public class MinesweeperAutoPlayer
+    public class MinesweeperAutoPlayer : MinesweeperPlayer
     {
-        public Minesweeper Minesweeper { get; private set; }
-        public Action AfterMoveCallback { get; set; }
-        public Action AfterRevealedMineCallback { get; set; }
-        public Action AfterFieldClearedCallback { get; set; }
-        public MinesweeperMoveResult LastMoveResult { get; private set; }
-        public Point LastMoveCoordinates { get; private set; }
         private int? RandomSeed { get; }
 
-        public MinesweeperAutoPlayer(Minesweeper minesweeper, int? randomSeed = null)
+        public MinesweeperAutoPlayer(Minesweeper minesweeper, int? randomSeed = null) : base(minesweeper)
         {
-            Minesweeper = minesweeper;
             RandomSeed = randomSeed;
-            LastMoveResult = MinesweeperMoveResult.Playing;
-            LastMoveCoordinates = default;
         }
 
-        public void PlayToEnd()
+        public override void PlayToEnd()
         {
             Random random = RandomSeed == null ? new Random() : new Random((int)RandomSeed);
-            while (LastMoveResult != MinesweeperMoveResult.RevealedMine && LastMoveResult != MinesweeperMoveResult.AllClear)
+            MinesweeperMoveResult lastMoveResult = MinesweeperMoveResult.Playing;
+            while (lastMoveResult != MinesweeperMoveResult.RevealedMine && lastMoveResult != MinesweeperMoveResult.AllClear)
             {
-                ISet<Cell> sureMineCells = GetSureMineCells(includeAdvanced: true);
-                ISet<Cell> sureClearCells = GetSureClearCells(includeAdvanced: true);
+                ISet<Cell> sureMineCells = GetSureMineCells(Minesweeper, includeAdvanced: true);
+                ISet<Cell> sureClearCells = GetSureClearCells(Minesweeper, includeAdvanced: true);
                 if (sureMineCells.Count == 0 && sureClearCells.Count == 0)
                 {
                     // Select a random untouched cell.
                     Cell? randomUntouchedCell = Minesweeper.GetUntouchedCells().OrderBy(c => random.Next()).FirstOrDefault();
                     if (randomUntouchedCell == null)
-                        LastMoveResult = MinesweeperMoveResult.AllClear;
+                        lastMoveResult = MinesweeperMoveResult.AllClear;
                     else
                     {
-                        LastMoveCoordinates = randomUntouchedCell.Coordinates;
-                        LastMoveResult = Minesweeper.MakeMove(MinesweeperMoveType.Reveal, randomUntouchedCell.Coordinates);
-                        AfterMoveCallback?.Invoke();
+                        lastMoveResult = Minesweeper.MakeMove(MinesweeperMoveType.RevealCell, randomUntouchedCell.Coordinates);
+                        if (lastMoveResult == MinesweeperMoveResult.RevealedMine)
+                            AfterRevealedMineCallback?.Invoke(randomUntouchedCell.Coordinates);
+                        else
+                            AfterMoveCallback?.Invoke(randomUntouchedCell.Coordinates);
                     }
                 }
 
                 foreach (Point point in sureMineCells.Select(c => c.Coordinates))
                 {
-                    LastMoveCoordinates = point;
-                    LastMoveResult = Minesweeper.MakeMove(MinesweeperMoveType.PlaceFlag, point);
-                    AfterMoveCallback?.Invoke();
+                    lastMoveResult = Minesweeper.MakeMove(MinesweeperMoveType.PlaceFlag, point);
+                    AfterMoveCallback?.Invoke(point);
                 }
 
                 foreach (Point point in sureClearCells.Select(c => c.Coordinates))
                 {
-                    LastMoveCoordinates = point;
-                    LastMoveResult = Minesweeper.MakeMove(MinesweeperMoveType.Reveal, point);
-                    AfterMoveCallback?.Invoke();
+                    lastMoveResult = Minesweeper.MakeMove(MinesweeperMoveType.RevealCell, point);
+                    AfterMoveCallback?.Invoke(point);
                 }
             }
 
-            if (LastMoveResult == MinesweeperMoveResult.RevealedMine)
-                AfterRevealedMineCallback?.Invoke();
-            else if (LastMoveResult == MinesweeperMoveResult.AllClear)
+            if (lastMoveResult == MinesweeperMoveResult.AllClear)
                 AfterFieldClearedCallback?.Invoke();
         }
 
         public void Reset()
         {
             Minesweeper.Reset();
-            LastMoveResult = MinesweeperMoveResult.Playing;
-            LastMoveCoordinates = default;
         }
 
-        public ISet<Cell> GetSureMineCells(bool includeAdvanced = false)
+        public static ISet<Cell> GetSureMineCells(Minesweeper minesweeper, bool includeAdvanced = false)
         {
             ISet<Cell> mineCells = new HashSet<Cell>();
 
-            foreach (Cell cell in GetAllRevealedNumberedCells())
+            foreach (Cell cell in GetAllRevealedNumberedCells(minesweeper))
             {
-                ISet<Cell> neighbors = Minesweeper.Grid.GetNeighborsOfCell(cell);
+                ISet<Cell> neighbors = minesweeper.Grid.GetNeighborsOfCell(cell);
                 ISet<Cell> untouchedNeighbors = neighbors.Where(n => n.State == CellState.Untouched).ToHashSet();
                 int flaggedNeighbors = neighbors.Count(n => n.State == CellState.Flagged);
                 if (untouchedNeighbors.Count + flaggedNeighbors == cell.MinesAround)
@@ -91,19 +79,19 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             }
 
             if (mineCells.Count == 0 && includeAdvanced)
-                return GetAdvancedSureMineCells();
+                return GetAdvancedSureMineCells(minesweeper);
 
             return mineCells;
         }
 
-        public ISet<Cell> GetAdvancedSureMineCells()
+        public static ISet<Cell> GetAdvancedSureMineCells(Minesweeper minesweeper)
         {
             // There is some magic going on in this method. The algorithm was made by trial and error (and a bit of logic).
             ISet<Cell> mineCells = new HashSet<Cell>();
 
-            foreach (Cell cell in GetAllRevealedNumberedCells())
+            foreach (Cell cell in GetAllRevealedNumberedCells(minesweeper))
             {
-                ISet<Cell> neighbors = Minesweeper.Grid.GetNeighborsOfCell(cell);
+                ISet<Cell> neighbors = minesweeper.Grid.GetNeighborsOfCell(cell);
                 ISet<Cell> sureMines = neighbors.Where(n => n.State == CellState.Flagged).ToHashSet(); // AKA flagged.
                 ISet<Cell> possibleMines = neighbors.Where(n => n.State == CellState.Untouched).ToHashSet(); // AKA untouched
                 int minesRemaining = cell.MinesAround - sureMines.Count;
@@ -114,7 +102,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
                 ISet<Cell> revealedNeighbors = neighbors.Where(n => n.State == CellState.Revealed && n.MinesAround > 0).ToHashSet();
                 foreach (Cell neighbor in revealedNeighbors)
                 {
-                    ISet<Cell> neighborsOfNeighbor = Minesweeper.Grid.GetNeighborsOfCell(neighbor);
+                    ISet<Cell> neighborsOfNeighbor = minesweeper.Grid.GetNeighborsOfCell(neighbor);
                     ISet<Cell> sureMinesOfNeighbor = neighborsOfNeighbor.Where(n => n.State == CellState.Flagged).ToHashSet(); // AKA flagged.
                     ISet<Cell> possibleMinesOfNeighbor = neighborsOfNeighbor.Where(n => n.State == CellState.Untouched).ToHashSet(); // AKA untouched
                     int minesRemainingOfNeighbor = neighbor.MinesAround - sureMinesOfNeighbor.Count;
@@ -140,13 +128,13 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             return mineCells;
         }
 
-        public ISet<Cell> GetSureClearCells(bool includeAdvanced = false)
+        public static ISet<Cell> GetSureClearCells(Minesweeper minesweeper, bool includeAdvanced = false)
         {
             ISet<Cell> clearCells = new HashSet<Cell>();
 
-            foreach (Cell cell in GetAllRevealedNumberedCells())
+            foreach (Cell cell in GetAllRevealedNumberedCells(minesweeper))
             {
-                ISet<Cell> neighbors = Minesweeper.Grid.GetNeighborsOfCell(cell);
+                ISet<Cell> neighbors = minesweeper.Grid.GetNeighborsOfCell(cell);
                 if (neighbors.Count(n => n.State == CellState.Flagged) == cell.MinesAround)
                     foreach (Cell neighbor in neighbors.Where(n => n.State == CellState.Untouched))
                     {
@@ -158,19 +146,19 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             }
 
             if (clearCells.Count == 0 && includeAdvanced)
-                return GetAdvancedSureClearCells();
+                return GetAdvancedSureClearCells(minesweeper);
 
             return clearCells;
         }
 
-        public ISet<Cell> GetAdvancedSureClearCells()
+        public static ISet<Cell> GetAdvancedSureClearCells(Minesweeper minesweeper)
         {
             // There is some magic going on in this method. The algorithm was made by trial and error (and a bit of logic).
             ISet<Cell> clearCells = new HashSet<Cell>();
 
-            foreach (Cell cell in GetAllRevealedNumberedCells())
+            foreach (Cell cell in GetAllRevealedNumberedCells(minesweeper))
             {
-                ISet<Cell> neighbors = Minesweeper.Grid.GetNeighborsOfCell(cell);
+                ISet<Cell> neighbors = minesweeper.Grid.GetNeighborsOfCell(cell);
                 ISet<Cell> sureMines = neighbors.Where(n => n.State == CellState.Flagged).ToHashSet(); // AKA flagged.
                 ISet<Cell> possibleMines = neighbors.Where(n => n.State == CellState.Untouched).ToHashSet(); // AKA untouched
                 int minesRemaining = cell.MinesAround - sureMines.Count;
@@ -181,7 +169,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
                 ISet<Cell> revealedNeighbors = neighbors.Where(n => n.State == CellState.Revealed && n.MinesAround > 0).ToHashSet();
                 foreach (Cell neighbor in revealedNeighbors)
                 {
-                    ISet<Cell> neighborsOfNeighbor = Minesweeper.Grid.GetNeighborsOfCell(neighbor);
+                    ISet<Cell> neighborsOfNeighbor = minesweeper.Grid.GetNeighborsOfCell(neighbor);
                     ISet<Cell> sureMinesOfNeighbor = neighborsOfNeighbor.Where(n => n.State == CellState.Flagged).ToHashSet(); // AKA flagged.
                     ISet<Cell> possibleMinesOfNeighbor = neighborsOfNeighbor.Where(n => n.State == CellState.Untouched).ToHashSet(); // AKA untouched
 
@@ -207,7 +195,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             return clearCells;
         }
 
-        private IEnumerable<Cell> GetAllRevealedNumberedCells()
-            => Minesweeper.Grid.GetAllCells().Where(c => c.State == CellState.Revealed && c.MinesAround > 0);
+        private static IEnumerable<Cell> GetAllRevealedNumberedCells(Minesweeper minesweeper)
+            => minesweeper.Grid.GetAllCells().Where(c => c.State == CellState.Revealed && c.MinesAround > 0);
     }
 }

@@ -9,13 +9,18 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
     internal class MinesweeperConsoleDrawer
     {
         public Point? SelectedCoordinates { get; set; }
+        public ConsoleLines? AdditionalText { get; set; }
         private Minesweeper Minesweeper { get; }
         private ConsoleDiffLines DiffLines { get; }
 
-        public MinesweeperConsoleDrawer(Minesweeper minesweeper, int line = 0)
+        public MinesweeperConsoleDrawer(Minesweeper minesweeper, int? line = null)
         {
             Minesweeper = minesweeper;
-            DiffLines = new ConsoleDiffLines(new Point(0, line));
+            DiffLines = new ConsoleDiffLines(new Point(0, line ?? System.Console.CursorTop));
+        }
+
+        public void DrawBase()
+        {
             DiffLines.FillArea(new Size(Minesweeper.Grid.Width * 2, Minesweeper.Grid.Height), ConsoleColor.DarkGray);
         }
 
@@ -36,6 +41,11 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
                     {
                         symbol = 'F';
                         backColor = ConsoleColor.Green;
+                    }
+                    else if (drawOption == MinesweeperDrawOption.ShowMines && cell.State == CellState.Flagged && !cell.IsMine)
+                    {
+                        symbol = 'X';
+                        backColor = ConsoleColor.DarkMagenta;
                     }
                     else if (cell.State == CellState.Flagged)
                     {
@@ -80,6 +90,10 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
             consoleLines.AddLine(new ConsoleString("Remaining mines: " + Minesweeper.GetNumberOfRemainingMines()));
             consoleLines.AddLine(new ConsoleString("Game completeness: " + (100 * Minesweeper.GetGameCompleteness()).ToString("N0") + "%"));
             consoleLines.AddLine();
+
+            if (AdditionalText != null)
+                consoleLines.AddLines(AdditionalText);
+
             DiffLines.WriteDiff(consoleLines);
             DiffLines.BringCursorToEnd();
         }
