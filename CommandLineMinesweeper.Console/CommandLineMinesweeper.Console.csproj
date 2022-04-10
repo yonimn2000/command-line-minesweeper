@@ -19,6 +19,9 @@
     <Reference Include="YonatanMankovich.ConsoleDiffWriter">
       <HintPath>..\..\..\Libraries\ConsoleDiffWriter\ConsoleDiffWriter\bin\Debug\net6.0\YonatanMankovich.ConsoleDiffWriter.dll</HintPath>
     </Reference>
+    <Reference Include="YonatanMankovich.SimpleConsoleMenus">
+      <HintPath>..\..\..\Libraries\SimpleConsoleMenu\SimpleConsoleMenu\bin\Debug\netstandard2.0\YonatanMankovich.SimpleConsoleMenus.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
