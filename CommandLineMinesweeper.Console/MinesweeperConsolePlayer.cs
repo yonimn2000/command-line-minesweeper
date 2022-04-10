@@ -9,7 +9,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
         private Point LastSelectedPoint { get; set; } = default;
         private ConsoleKey[] AllowedKeys { get; } = new ConsoleKey[]
         {
-            ConsoleKey.F, ConsoleKey.R,
+            ConsoleKey.F, ConsoleKey.R, ConsoleKey.Q,
             ConsoleKey.LeftArrow, ConsoleKey.RightArrow,
             ConsoleKey.DownArrow, ConsoleKey.UpArrow
         };
@@ -19,11 +19,13 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
         public override void PlayToEnd()
         {
             MinesweeperMoveResult lastMoveResult = MinesweeperMoveResult.Playing;
-            Point lastMoveCoordinates = default;
             while (lastMoveResult != MinesweeperMoveResult.RevealedMine && lastMoveResult != MinesweeperMoveResult.AllClear)
             {
-                MinesweeperMove move = GetUserMove();
-                lastMoveCoordinates = move.Coordinates;
+                MinesweeperMove? move = GetUserMove();
+
+                if (move == null) // Player quit.
+                    break;
+
                 lastMoveResult = Minesweeper.MakeMove(move);
 
                 switch (lastMoveResult)
@@ -37,7 +39,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
             }
         }
 
-        public MinesweeperMove GetUserMove()
+        public MinesweeperMove? GetUserMove()
         {
             do
             {
@@ -51,6 +53,9 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
 
                     case ConsoleKey.R:
                         return new MinesweeperMove(MinesweeperMoveType.RevealCell, selectedPoint);
+
+                    case ConsoleKey.Q:
+                        return null;
 
                     case ConsoleKey.RightArrow: selectedPoint = MoveSelectedPoint(selectedPoint, new Point(1, 0)); break;
                     case ConsoleKey.LeftArrow: selectedPoint = MoveSelectedPoint(selectedPoint, new Point(-1, 0)); break;
