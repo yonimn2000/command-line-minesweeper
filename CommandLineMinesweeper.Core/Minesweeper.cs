@@ -9,11 +9,9 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
         public int TotalMines { get; }
         public CellsGrid Grid { get; }
 
-        public Minesweeper() : this(new BoardOptions()) { }
-
         public Minesweeper(BoardOptions options)
         {
-            TotalMines = options.GetNumberOfMines();
+            TotalMines = options.Mines;
             Grid = new CellsGrid(options.Width, options.Height);
             PlaceRandomMines(options);
         }
@@ -22,7 +20,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
         {
             // Shuffle all cells and take as many as the number of mines to place.
             Random random = options.RandomSeed == null ? new Random() : new Random((int)options.RandomSeed);
-            foreach (Cell cell in Grid.GetAllCells().OrderBy(c => random.Next()).Take(options.GetNumberOfMines()))
+            foreach (Cell cell in Grid.GetAllCells().OrderBy(c => random.Next()).Take(options.Mines))
             {
                 cell.IsMine = true;
                 foreach (Cell neighbor in Grid.GetNeighborsOfCell(cell))
