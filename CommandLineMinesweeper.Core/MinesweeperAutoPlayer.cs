@@ -4,23 +4,36 @@ using YonatanMankovich.CommandLineMinesweeper.Core.Exceptions;
 
 namespace YonatanMankovich.CommandLineMinesweeper.Core
 {
+    /// <summary>
+    /// Represents an automatic <see cref="Minesweeper"/> game player and provides static methods for finding sure moves.
+    /// </summary>
     public class MinesweeperAutoPlayer : MinesweeperPlayer
     {
+        /// <summary>
+        /// The optional random seed for the necessary random moves.
+        /// </summary>
         private int? RandomSeed { get; }
 
+        /// <summary>
+        /// Initializes an instance of the <see cref="MinesweeperAutoPlayer"/> class with an instance of the
+        /// <see cref="Minesweeper"/> game class.
+        /// </summary>
+        /// <param name="minesweeper">The <see cref="Minesweeper"/> game.</param>
+        /// <param name="randomSeed">An optional random seed for the necessary random moves.</param>
         public MinesweeperAutoPlayer(Minesweeper minesweeper, int? randomSeed = null) : base(minesweeper)
         {
             RandomSeed = randomSeed;
         }
 
+        /// <inheritdoc/>
         public override void PlayToEnd()
         {
             Random random = RandomSeed == null ? new Random() : new Random((int)RandomSeed);
             MinesweeperMoveResult lastMoveResult = MinesweeperMoveResult.Playing;
             while (lastMoveResult != MinesweeperMoveResult.RevealedMine && lastMoveResult != MinesweeperMoveResult.AllClear)
             {
-                ISet<Cell> sureMineCells = GetSureMineCells(Minesweeper, includeAdvanced: true);
-                ISet<Cell> sureClearCells = GetSureClearCells(Minesweeper, includeAdvanced: true);
+                ISet<Cell> sureMineCells = GetSureMineCells(Minesweeper);
+                ISet<Cell> sureClearCells = GetSureClearCells(Minesweeper);
                 if (sureMineCells.Count == 0 && sureClearCells.Count == 0)
                 {
                     // Select a random untouched cell.
@@ -54,12 +67,14 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
                 AfterFieldClearedCallback?.Invoke();
         }
 
-        public void Reset()
-        {
-            Minesweeper.Reset();
-        }
-
-        public static ISet<Cell> GetSureMineCells(Minesweeper minesweeper, bool includeAdvanced = false)
+        /// <summary>
+        /// Gets an <see cref="ISet{T}"/> the sure mine <see cref="Cell"/>s of a <see cref="Minesweeper"/> 
+        /// game based on the currently revealed and flagged <see cref="Cell"/>s.
+        /// </summary>
+        /// <param name="minesweeper">The <see cref="Minesweeper"/> game.</param>
+        /// <returns>An <see cref="ISet{T}"/> of sure mine <see cref="Cell"/>s.</returns>
+        /// <exception cref="CellException">Thrown if something went wrong in the algorithm.</exception>
+        public static ISet<Cell> GetSureMineCells(Minesweeper minesweeper)
         {
             ISet<Cell> mineCells = new HashSet<Cell>();
 
@@ -78,13 +93,24 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
                     }
             }
 
-            if (mineCells.Count == 0 && includeAdvanced)
+            if (mineCells.Count == 0)
                 return GetAdvancedSureMineCells(minesweeper);
 
             return mineCells;
         }
 
-        public static ISet<Cell> GetAdvancedSureMineCells(Minesweeper minesweeper)
+        /// <summary>
+        /// Gets an <see cref="ISet{T}"/> of the advanced sure mine <see cref="Cell"/>s of a <see cref="Minesweeper"/>
+        /// game based on the currently revealed and flagged <see cref="Cell"/>s.
+        /// Unlike <see cref="GetSureMineCells(Minesweeper)"/>, this algorithm checks each neighbor 
+        /// <see cref="Cell"/> of a revealed <see cref="Cell"/> if there are any sure mine <see cref="Cell"/>s 
+        /// next to it, thus making this algorithm more computationally expensive; therefore, it should only 
+        /// be run if the previous algorithm did not find any sure mine <see cref="Cell"/>s.
+        /// </summary>
+        /// <param name="minesweeper">The <see cref="Minesweeper"/> game.</param>
+        /// <returns>An <see cref="ISet{T}"/> of sure mine <see cref="Cell"/>s.</returns>
+        /// <exception cref="CellException">Thrown if something went wrong in the algorithm.</exception>
+        private static ISet<Cell> GetAdvancedSureMineCells(Minesweeper minesweeper)
         {
             // There is some magic going on in this method. The algorithm was made by trial and error (and a bit of logic).
             ISet<Cell> mineCells = new HashSet<Cell>();
@@ -128,7 +154,14 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             return mineCells;
         }
 
-        public static ISet<Cell> GetSureClearCells(Minesweeper minesweeper, bool includeAdvanced = false)
+        /// <summary>
+        /// Gets an <see cref="ISet{T}"/> of the sure clear (non-mine) <see cref="Cell"/>s of a <see cref="Minesweeper"/> 
+        /// game based on the currently revealed and flagged <see cref="Cell"/>s.
+        /// </summary>
+        /// <param name="minesweeper">The <see cref="Minesweeper"/> game.</param>
+        /// <returns>An <see cref="ISet{T}"/> of sure clear <see cref="Cell"/>s.</returns>
+        /// <exception cref="CellException">Thrown if something went wrong in the algorithm.</exception>
+        public static ISet<Cell> GetSureClearCells(Minesweeper minesweeper)
         {
             ISet<Cell> clearCells = new HashSet<Cell>();
 
@@ -145,13 +178,23 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
                     }
             }
 
-            if (clearCells.Count == 0 && includeAdvanced)
+            if (clearCells.Count == 0)
                 return GetAdvancedSureClearCells(minesweeper);
 
             return clearCells;
         }
 
-        public static ISet<Cell> GetAdvancedSureClearCells(Minesweeper minesweeper)
+        /// <summary>
+        /// Gets an <see cref="ISet{T}"/> of the advanced sure clear <see cref="Cell"/>s of a <see cref="Minesweeper"/> game based on the currently 
+        /// revealed and flagged <see cref="Cell"/>s. Unlike <see cref="GetSureClearCells(Minesweeper)"/>, this algorithm
+        /// checks each neighbor of a revealed <see cref="Cell"/> if there are any sure clear <see cref="Cell"/>s next 
+        /// to it, thus making this algorithm more computationally expensive; therefore, it should only be run if the 
+        /// previous algorithm did not find any sure clear <see cref="Cell"/>s.
+        /// </summary>
+        /// <param name="minesweeper">The <see cref="Minesweeper"/> game.</param>
+        /// <returns>An <see cref="ISet{T}"/> of sure clear <see cref="Cell"/>s.</returns>
+        /// <exception cref="CellException">Thrown if something went wrong in the algorithm.</exception>
+        private static ISet<Cell> GetAdvancedSureClearCells(Minesweeper minesweeper)
         {
             // There is some magic going on in this method. The algorithm was made by trial and error (and a bit of logic).
             ISet<Cell> clearCells = new HashSet<Cell>();
@@ -195,6 +238,12 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             return clearCells;
         }
 
+        /// <summary>
+        /// Gets an <see cref="IEnumerable{T}"/> of all the revealed <see cref="Cell"/>s that have a number on them,
+        /// that is, they have at least one mine <see cref="Cell"/> around them.
+        /// </summary>
+        /// <param name="minesweeper">The <see cref="Minesweeper"/> game.</param>
+        /// <returns>An <see cref="IEnumerable{T}"/> of all the revealed <see cref="Cell"/>s that have a number on them.</returns>
         private static IEnumerable<Cell> GetAllRevealedNumberedCells(Minesweeper minesweeper)
             => minesweeper.Grid.GetAllCells().Where(c => c.State == CellState.Revealed && c.MinesAround > 0);
     }

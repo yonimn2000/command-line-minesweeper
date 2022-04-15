@@ -4,29 +4,44 @@ using YonatanMankovich.CommandLineMinesweeper.Core.Enums;
 
 namespace YonatanMankovich.CommandLineMinesweeper.Console
 {
+    /// <summary>
+    /// Represents a console-based <see cref="Minesweeper"/> game player.
+    /// </summary>
     public class MinesweeperConsolePlayer : MinesweeperPlayer
     {
-        private Point LastSelectedPoint { get; set; } = default;
+        private enum MoveDirection { Left, Right, Down, Up }
+
+        /// <summary>
+        /// The array of keys the user can press for actions.
+        /// </summary>
         private ConsoleKey[] AllowedKeys { get; } = new ConsoleKey[]
         {
-            ConsoleKey.F, ConsoleKey.R, ConsoleKey.Q,
-            ConsoleKey.LeftArrow, ConsoleKey.RightArrow,
+            ConsoleKey.F, ConsoleKey.R, ConsoleKey.Q, // F = toggle flag; R = Reveal; Q = quit;
+            ConsoleKey.LeftArrow, ConsoleKey.RightArrow, // Arrows are for selecting grid cells.
             ConsoleKey.DownArrow, ConsoleKey.UpArrow
         };
 
+        /// <summary>
+        /// Initializes an instance of the <see cref="MinesweeperConsolePlayer"/> class with an instance of the
+        /// <see cref="Minesweeper"/> game class.
+        /// </summary>
+        /// <param name="minesweeper">The <see cref="Minesweeper"/> game.</param>
         public MinesweeperConsolePlayer(Minesweeper minesweeper) : base(minesweeper) { }
 
+        /// <inheritdoc/>
         public override void PlayToEnd()
         {
             MinesweeperMoveResult lastMoveResult = MinesweeperMoveResult.Playing;
+            Point lastSelectedPoint = default;
             while (lastMoveResult != MinesweeperMoveResult.RevealedMine && lastMoveResult != MinesweeperMoveResult.AllClear)
             {
-                MinesweeperMove? move = GetUserMove();
+                MinesweeperMove? move = GetUserMove(lastSelectedPoint);
 
                 if (move == null) // Player quit.
                     break;
 
                 lastMoveResult = Minesweeper.MakeMove(move);
+                lastSelectedPoint = move.Coordinates;
 
                 switch (lastMoveResult)
                 {
@@ -39,13 +54,17 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
             }
         }
 
-        public MinesweeperMove? GetUserMove()
+        /// <summary>
+        /// Gets a move from a user starting at a <paramref name="selectedPoint"/>.
+        /// </summary>
+        /// <param name="selectedPoint">The currently selected point on the grid.</param>
+        /// <returns>A <see cref="MinesweeperMove"/> that corresponds to the user action.</returns>
+        /// <exception cref="NotImplementedException"></exception>
+        private MinesweeperMove? GetUserMove(Point selectedPoint)
         {
             do
             {
-                Point selectedPoint = LastSelectedPoint;
-
-                AfterSelectCallback?.Invoke(selectedPoint);
+                AfterCellSelectedCallback?.Invoke(selectedPoint);
                 switch (GetValidUserKey())
                 {
                     case ConsoleKey.F:
@@ -57,17 +76,20 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
                     case ConsoleKey.Q:
                         return null;
 
-                    case ConsoleKey.RightArrow: selectedPoint = MoveSelectedPoint(selectedPoint, new Point(1, 0)); break;
-                    case ConsoleKey.LeftArrow: selectedPoint = MoveSelectedPoint(selectedPoint, new Point(-1, 0)); break;
-                    case ConsoleKey.UpArrow: selectedPoint = MoveSelectedPoint(selectedPoint, new Point(0, -1)); break;
-                    case ConsoleKey.DownArrow: selectedPoint = MoveSelectedPoint(selectedPoint, new Point(0, 1)); break;
+                    case ConsoleKey.RightArrow: selectedPoint = MoveSelectedPoint(selectedPoint, MoveDirection.Right); break;
+                    case ConsoleKey.LeftArrow: selectedPoint = MoveSelectedPoint(selectedPoint, MoveDirection.Left); break;
+                    case ConsoleKey.UpArrow: selectedPoint = MoveSelectedPoint(selectedPoint, MoveDirection.Up); break;
+                    case ConsoleKey.DownArrow: selectedPoint = MoveSelectedPoint(selectedPoint, MoveDirection.Down); break;
 
                     default: throw new NotImplementedException();
                 }
-                LastSelectedPoint = selectedPoint;
             } while (true);
         }
 
+        /// <summary>
+        /// Gets a valid <see cref="ConsoleKey"/> from the user. Validity is based on the <see cref="AllowedKeys"/> array.
+        /// </summary>
+        /// <returns>A valid <see cref="ConsoleKey"/> from the user.</returns>
         private ConsoleKey GetValidUserKey()
         {
             ConsoleKey lastKey;
@@ -78,18 +100,23 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
             return lastKey;
         }
 
-        private Point MoveSelectedPoint(Point selectedPoint, Point offset)
+        /// <summary>
+        /// Moves the <paramref name="selectedPoint"/> to the next available cell to the direction of 
+        /// the <paramref name="offset"/>. Returns the same point if no move is available in the chosen direction.
+        /// </summary>
+        /// <param name="selectedPoint">The currently selected point on the grid.</param>
+        /// <param name="offset">The direction to which to move the selected point.</param>
+        /// <returns>A new <see cref="Point"/> which is valid for the next user move.</returns>
+        private Point MoveSelectedPoint(Point selectedPoint, MoveDirection direction)
         {
-            Point? possibleCoordinates = null;
-
-            if (offset.Y > 0)      // Moving down.
-                possibleCoordinates = GetPossibleCoordinates(selectedPoint, c => c.Coordinates.Y > selectedPoint.Y);
-            else if (offset.Y < 0) // Moving up.
-                possibleCoordinates = GetPossibleCoordinates(selectedPoint, c => c.Coordinates.Y < selectedPoint.Y);
-            else if (offset.X > 0) // Moving right.
-                possibleCoordinates = GetPossibleCoordinates(selectedPoint, c => c.Coordinates.X > selectedPoint.X);
-            else if (offset.X < 0) // Moving left.
-                possibleCoordinates = GetPossibleCoordinates(selectedPoint, c => c.Coordinates.X < selectedPoint.X);
+            Point? possibleCoordinates = GetPossibleCoordinates(selectedPoint, direction switch
+            {
+                MoveDirection.Left => c => c.Coordinates.X < selectedPoint.X,
+                MoveDirection.Right => c => c.Coordinates.X > selectedPoint.X,
+                MoveDirection.Down => c => c.Coordinates.Y > selectedPoint.Y,
+                MoveDirection.Up => c => c.Coordinates.Y < selectedPoint.Y,
+                _ => throw new NotImplementedException() // Default case.
+            });
 
             return possibleCoordinates ?? selectedPoint; // If no move available, return the same point.
         }

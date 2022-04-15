@@ -5,18 +5,18 @@ using YonatanMankovich.CommandLineMinesweeper.Core;
 using YonatanMankovich.ConsoleDiffWriter.Data;
 using YonatanMankovich.SimpleConsoleMenus;
 
-const string boardOptionsPath = "MinesweeperOptions.xml";
+const string gameOptionsPath = "MinesweeperOptions.xml";
 
 Console.Title = "Yonatan's Command Line Minesweeper";
 Console.CursorVisible = false;
 
-BoardOptions boardOptions = ReadBoardOptions();
+MinesweeperOptions minesweeperOptions = ReadBoardOptions();
 
 do
 {
     Console.WriteLine("Welcome to Yonatan's command line Minesweeper game!" + Environment.NewLine);
 
-    Console.WriteLine($"(Current board: {boardOptions.Height}x{boardOptions.Width} with {boardOptions.Mines} mines)" + Environment.NewLine);
+    Console.WriteLine($"(Current board: {minesweeperOptions.Height}x{minesweeperOptions.Width} with {minesweeperOptions.Mines} mines)" + Environment.NewLine);
 
     SimpleConsoleMenu mainMenu
         = new SimpleConsoleMenu("Select game mode:", "Play", "Auto-play", "Options", "Exit");
@@ -26,8 +26,8 @@ do
 
     switch (mainMenu.SelectedIndex)
     {
-        case 0: HumanPlay(boardOptions); break;
-        case 1: AutoPlay(boardOptions); break;
+        case 0: HumanPlay(minesweeperOptions); break;
+        case 1: AutoPlay(minesweeperOptions); break;
         case 2: SetSettings(); break;
         case 3: Environment.Exit(0); break;
         default: throw new NotImplementedException();
@@ -39,13 +39,13 @@ do
 
 // ------------------------- Helper methods below ------------------------------
 
-BoardOptions ReadBoardOptions()
+MinesweeperOptions ReadBoardOptions()
 {
-    BoardOptions? readOptions = BoardOptions.ReadFromXmlFile(boardOptionsPath);
+    MinesweeperOptions? readOptions = MinesweeperOptions.ReadFromXmlFile(gameOptionsPath);
     if (readOptions == null)
     {
-        readOptions = BoardOptions.Beginner;
-        readOptions.SaveToXmlFile(boardOptionsPath);
+        readOptions = MinesweeperOptions.Beginner;
+        readOptions.SaveToXmlFile(gameOptionsPath);
     }
     return readOptions;
 }
@@ -58,32 +58,32 @@ void SetSettings()
 
     switch (modeSelectionMenu.SelectedIndex)
     {
-        case 0: boardOptions = BoardOptions.Beginner; break;
-        case 1: boardOptions = BoardOptions.Intermediate; break;
-        case 2: boardOptions = BoardOptions.Expert; break;
+        case 0: minesweeperOptions = MinesweeperOptions.Beginner; break;
+        case 1: minesweeperOptions = MinesweeperOptions.Intermediate; break;
+        case 2: minesweeperOptions = MinesweeperOptions.Expert; break;
         case 3:
             {
                 Console.WriteLine("Please edit the options file and hit ENTER whenever you are done.");
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    Process.Start("explorer", boardOptionsPath);
+                    Process.Start("explorer", gameOptionsPath);
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                    Process.Start("nano", boardOptionsPath);
+                    Process.Start("nano", gameOptionsPath);
                 else
-                    Console.WriteLine("Please edit the file at " + boardOptionsPath);
+                    Console.WriteLine("Please edit the file at " + gameOptionsPath);
 
                 Console.WriteLine(Environment.NewLine + "Press ENTER to go to main menu . . .");
                 Console.ReadLine();
-                boardOptions = ReadBoardOptions();
+                minesweeperOptions = ReadBoardOptions();
             }
             break;
         default: throw new NotImplementedException();
     }
 
-    boardOptions.SaveToXmlFile(boardOptionsPath);
+    minesweeperOptions.SaveToXmlFile(gameOptionsPath);
 }
 
-void HumanPlay(BoardOptions options)
+void HumanPlay(MinesweeperOptions options)
 {
     Console.WriteLine("Use the arrow keys to select a cell; " +
         "F to toggle a flag; R to reveal the cell; Q to return to main menu." + Environment.NewLine);
@@ -106,7 +106,7 @@ void HumanPlay(BoardOptions options)
     Console.ReadLine();
 }
 
-void AutoPlay(BoardOptions options)
+void AutoPlay(MinesweeperOptions options)
 {
     Minesweeper game = new Minesweeper(options);
     MinesweeperPlayer player = new MinesweeperAutoPlayer(game);
@@ -129,7 +129,7 @@ void AutoPlay(BoardOptions options)
 
 void SetCommonCallbacks(MinesweeperPlayer player, MinesweeperConsoleDrawer drawer)
 {
-    player.AfterSelectCallback = (lastMoveCoordinates) =>
+    player.AfterCellSelectedCallback = (lastMoveCoordinates) =>
     {
         drawer.SelectedCoordinates = lastMoveCoordinates;
         drawer.Draw();

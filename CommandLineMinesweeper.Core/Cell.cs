@@ -4,13 +4,35 @@ using YonatanMankovich.CommandLineMinesweeper.Core.Exceptions;
 
 namespace YonatanMankovich.CommandLineMinesweeper.Core
 {
+    /// <summary>
+    /// Represents a Minesweeper cell.
+    /// </summary>
     public class Cell
     {
+        /// <summary>
+        /// Gets the coordinates of the cell.
+        /// </summary>
         public Point Coordinates { get; }
+
+        /// <summary>
+        /// Gets the state of the cell.
+        /// </summary>
         public CellState State { get; private set; }
-        public bool IsMine { get; internal set; }
+
+        /// <summary>
+        /// Gets the value representing whether the cell is a mine or not.
+        /// </summary>
+        public bool IsMine { get; private set; }
+
+        /// <summary>
+        /// Gets the number of mines around the cell (the number on the cell).
+        /// </summary>
         public int MinesAround { get; private set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Cell"/> class with coordinates.
+        /// </summary>
+        /// <param name="coordinates">The grid coordinates of the cell.</param>
         internal Cell(Point coordinates)
         {
             Coordinates = coordinates;
@@ -19,18 +41,34 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             MinesAround = 0;
         }
 
-        public bool IsValidForMove()
-        {
-            return State == CellState.Untouched || State == CellState.Flagged;
-        }
+        /// <summary>
+        /// Gets a value indicating whether the cell is valid for a player move.
+        /// </summary>
+        /// <returns><see langword="true"/> if the cell is untouched or flagged; <see langword="false"/> otherwise.</returns>
+        public bool IsValidForMove() => State == CellState.Untouched || State == CellState.Flagged;
 
-        public bool IsValidForReveal()
-        {
-            return State == CellState.Untouched;
-        }
+        /// <summary>
+        /// Gets a value indicating whether the cell is valid for a player reveal.
+        /// </summary>
+        /// <returns><see langword="true"/> if the cell is untouched; <see langword="false"/> otherwise.</returns>
+        public bool IsValidForReveal() => State == CellState.Untouched;
 
+        /// <summary>
+        /// Increments <see cref="MinesAround"/> by one.
+        /// </summary>
         internal void IncrementMinesAround() => MinesAround++;
 
+        /// <summary>
+        /// Places a mine on the cell.
+        /// </summary>
+        internal void PlaceMine() => IsMine = true;
+
+        /// <summary>
+        /// Reveals the cell.
+        /// </summary>
+        /// <exception cref="RevealRevealedCellException"></exception>
+        /// <exception cref="FlaggedCellRevealException"></exception>
+        /// <exception cref="RevealedMineException"></exception>
         internal void Reveal()
         {
             if (State == CellState.Revealed)
@@ -45,6 +83,11 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             State = CellState.Revealed;
         }
 
+        /// <summary>
+        /// Sets the <see cref="State"/> of the cell to <see cref="CellState.Flagged"/>.
+        /// </summary>
+        /// <exception cref="CellFlagException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
         internal void PlaceFlag()
         {
             switch (State)
@@ -56,6 +99,11 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             }
         }
 
+        /// <summary>
+        /// Sets the <see cref="State"/> of the cell to <see cref="CellState.Untouched"/>.
+        /// </summary>
+        /// <exception cref="CellFlagException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
         internal void RemoveFlag()
         {
             switch (State)
@@ -67,6 +115,11 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             }
         }
 
+        /// <summary>
+        /// Places a flag on the cell if it is not flagged and removes the flag if it is flagged.
+        /// </summary>
+        /// <exception cref="CellFlagException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
         internal void ToggleFlag()
         {
             switch (State)
@@ -78,6 +131,9 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
             }
         }
 
+        /// <summary>
+        /// Clears the <see cref="State"/> by setting it to <see cref="CellState.Untouched"/>.
+        /// </summary>
         internal void ClearState() => State = CellState.Untouched;
     }
 }
