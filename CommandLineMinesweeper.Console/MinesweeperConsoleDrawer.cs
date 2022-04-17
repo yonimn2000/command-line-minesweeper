@@ -1,8 +1,8 @@
 ﻿using System.Drawing;
 using YonatanMankovich.CommandLineMinesweeper.Core;
 using YonatanMankovich.CommandLineMinesweeper.Core.Enums;
-using YonatanMankovich.ConsoleDiffWriter.Data;
-using YonatanMankovich.ConsoleDiffWriter.Diff;
+using YonatanMankovich.ConsoleDiffWriter.Color;
+using YonatanMankovich.SimpleColorConsole;
 
 namespace YonatanMankovich.CommandLineMinesweeper.Console
 {
@@ -19,7 +19,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
         /// <summary>
         /// Gets or sets any additional <see cref="ConsoleLines"/> to add at the end of the drawn game board.
         /// </summary>
-        public ConsoleLines? AdditionalText { get; set; }
+        public ColorLines? AdditionalText { get; set; }
 
         /// <summary>
         /// The <see cref="Core.Minesweeper"/> game.
@@ -29,7 +29,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
         /// <summary>
         /// The structure that holds and generates the drawn character differences.
         /// </summary>
-        private ConsoleDiffLines DiffLines { get; }
+        private ColorLinesDiff DiffLines { get; }
 
         /// <summary>
         /// Initializes an instance of the <see cref="MinesweeperConsoleDrawer"/> class with a 
@@ -41,15 +41,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
         public MinesweeperConsoleDrawer(Minesweeper minesweeper, int? line = null)
         {
             Minesweeper = minesweeper;
-            DiffLines = new ConsoleDiffLines(new Point(0, line ?? System.Console.CursorTop));
-        }
-
-        /// <summary>
-        /// Draws the background of the board more efficiently.
-        /// </summary>
-        public void DrawBase()
-        {
-            DiffLines.FillArea(new Size(Minesweeper.Grid.Width * 2, Minesweeper.Grid.Height), ConsoleColor.DarkGray);
+            DiffLines = new ColorLinesDiff(new Point(0, line ?? System.Console.CursorTop));
         }
 
         /// <summary>
@@ -58,7 +50,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
         /// <param name="drawOption">The draw option.</param>
         public void Draw(MinesweeperDrawOption drawOption = MinesweeperDrawOption.Normal)
         {
-            ConsoleLines consoleLines = new ConsoleLines();
+            ColorLines consoleLines = new ColorLines();
 
             for (int y = 0; y < Minesweeper.Grid.Height; y++)
             {
@@ -114,12 +106,12 @@ namespace YonatanMankovich.CommandLineMinesweeper.Console
                     if (cell.Coordinates == SelectedCoordinates && drawOption != MinesweeperDrawOption.AllClear)
                         backColor = ConsoleColor.Yellow;
 
-                    consoleLines.AddToEndOfLastLine(new ConsoleString(symbol + " ", textColor, backColor));
+                    consoleLines.AddToEndOfLastLine((symbol + " ").Color(textColor, backColor));
                 }
                 consoleLines.AddLine();
             }
-            consoleLines.AddLine(new ConsoleString("Remaining mines: " + Minesweeper.GetNumberOfRemainingMines()));
-            consoleLines.AddLine(new ConsoleString("Game completeness: " + (100 * Minesweeper.GetGameCompleteness()).ToString("N0") + "%"));
+            consoleLines.AddLine("Remaining mines: " + Minesweeper.GetNumberOfRemainingMines());
+            consoleLines.AddLine("Game completeness: " + (100 * Minesweeper.GetGameCompleteness()).ToString("N0") + "%");
             consoleLines.AddLine();
 
             if (AdditionalText != null)
