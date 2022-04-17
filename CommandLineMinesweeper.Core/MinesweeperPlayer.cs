@@ -16,7 +16,7 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
         /// The action to call after the current <see cref="MinesweeperPlayer"/> makes a move.
         /// Passes the move coordinates.
         /// </summary>
-        public Action<Point>? AfterMoveCallback { get; set; }
+        public Action<Point?>? AfterMoveCallback { get; set; }
 
         /// <summary>
         /// The action to call after the current <see cref="MinesweeperPlayer"/> makes an invalid move.

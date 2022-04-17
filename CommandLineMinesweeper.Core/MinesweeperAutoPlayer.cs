@@ -12,7 +12,17 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
         /// <summary>
         /// The optional random seed for the necessary random moves.
         /// </summary>
-        private int? RandomSeed { get; }
+        public int? RandomSeed { get; }
+
+        /// <summary>
+        /// Gets or sets the value indicating whether the auto player should make all sure moves at once.
+        /// </summary>
+        public bool MoveInBatches { get; set; }
+
+        /// <summary>
+        /// Gets the number of guess moves made by the player.
+        /// </summary>
+        public int GuessMoves { get; private set; }
 
         /// <summary>
         /// Initializes an instance of the <see cref="MinesweeperAutoPlayer"/> class with an instance of the
@@ -36,15 +46,22 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
                 ISet<Cell> sureClearCells = GetSureClearCells(Minesweeper);
                 if (sureMineCells.Count == 0 && sureClearCells.Count == 0)
                 {
+                    GuessMoves++;
                     // Select a random untouched cell.
                     Cell? randomUntouchedCell = Minesweeper.GetUntouchedCells().OrderBy(c => random.Next()).FirstOrDefault();
                     if (randomUntouchedCell == null)
+                    {
                         lastMoveResult = MinesweeperMoveResult.AllClear;
+                        break;
+                    }
                     else
                     {
                         lastMoveResult = Minesweeper.MakeMove(MinesweeperMoveType.RevealCell, randomUntouchedCell.Coordinates);
                         if (lastMoveResult == MinesweeperMoveResult.RevealedMine)
+                        {
                             AfterRevealedMineCallback?.Invoke(randomUntouchedCell.Coordinates);
+                            break;
+                        }
                         else
                             AfterMoveCallback?.Invoke(randomUntouchedCell.Coordinates);
                     }
@@ -53,14 +70,20 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
                 foreach (Point point in sureMineCells.Select(c => c.Coordinates))
                 {
                     lastMoveResult = Minesweeper.MakeMove(MinesweeperMoveType.PlaceFlag, point);
-                    AfterMoveCallback?.Invoke(point);
+                    if (!MoveInBatches)
+                        AfterMoveCallback?.Invoke(point);
                 }
+                if (MoveInBatches)
+                    AfterMoveCallback?.Invoke(null);
 
                 foreach (Point point in sureClearCells.Select(c => c.Coordinates))
                 {
                     lastMoveResult = Minesweeper.MakeMove(MinesweeperMoveType.RevealCell, point);
-                    AfterMoveCallback?.Invoke(point);
+                    if (!MoveInBatches)
+                        AfterMoveCallback?.Invoke(point);
                 }
+                if (MoveInBatches)
+                    AfterMoveCallback?.Invoke(null);
             }
 
             if (lastMoveResult == MinesweeperMoveResult.AllClear)
