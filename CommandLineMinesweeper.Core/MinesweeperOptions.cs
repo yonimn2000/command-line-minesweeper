@@ -1,6 +1,4 @@
-﻿using System.Xml.Serialization;
-
-namespace YonatanMankovich.CommandLineMinesweeper.Core
+﻿namespace YonatanMankovich.CommandLineMinesweeper.Core
 {
     /// <summary>
     /// Represents Minesweeper game options.
@@ -91,47 +89,37 @@ namespace YonatanMankovich.CommandLineMinesweeper.Core
         }
 
         /// <summary>
-        /// Saves the current options to an XML file at the specified path.
+        /// Saves the current options to an file at the specified path.
         /// </summary>
         /// <param name="path">The path.</param>
-        public void SaveToXmlFile(string path)
+        public void SaveToFile(string path)
         {
-            TextWriter? writer = null;
-            try
-            {
-                XmlSerializer serializer = new XmlSerializer(typeof(MinesweeperOptions));
-                writer = new StreamWriter(path);
-                serializer.Serialize(writer, this);
-            }
-            finally
-            {
-                if (writer != null)
-                    writer.Close();
-            }
+            File.WriteAllText(path, $"Height:{Height}\nWidth:{Width}\nMines:{Mines}\nRandom:{RandomSeed}");
         }
 
         /// <summary>
-        /// Reads the saved game options from a specified XML file path into a new <see cref="MinesweeperOptions"/> object.
+        /// Reads the saved game options from a specified file path into a new <see cref="MinesweeperOptions"/> object.
         /// </summary>
         /// <param name="path">The path to the file.</param>
         /// <returns>A new <see cref="MinesweeperOptions"/> object with the read game options.</returns>
-        public static MinesweeperOptions? ReadFromXmlFile(string path)
+        public static MinesweeperOptions? ReadFromFile(string path)
         {
-            TextReader? reader = null;
-            try
-            {
-                if (!File.Exists(path))
-                    return null;
+            if (!File.Exists(path))
+                return null;
 
-                XmlSerializer serializer = new XmlSerializer(typeof(MinesweeperOptions));
-                reader = new StreamReader(path);
-                return serializer.Deserialize(reader) as MinesweeperOptions;
-            }
-            finally
+            IDictionary<string, string> options = new Dictionary<string, string>();
+
+            foreach (string line in File.ReadLines(path))
             {
-                if (reader != null)
-                    reader.Close();
+                string[] tokens = line.Split(':');
+                options.Add(tokens[0], tokens[1]);
             }
+
+            int height = int.Parse(options["Height"]);
+            int width = int.Parse(options["Width"]);
+            int mines = int.Parse(options["Mines"]);
+            int? randomSeed = string.IsNullOrWhiteSpace(options["Random"]) ? null : int.Parse(options["Random"]);
+            return new MinesweeperOptions(height, width, mines, randomSeed);
         }
 
         /// <summary>
