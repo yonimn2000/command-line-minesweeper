@@ -1,30 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <AssemblyName>YonatanMankovich.$(MSBuildProjectName)</AssemblyName>
-    <RootNamespace>YonatanMankovich.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
-    <Authors>Yonatan Mankovich</Authors>
-    <Copyright>Copyright 2022 © Yonatan Mankovich</Copyright>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<AssemblyName>YonatanMankovich.$(MSBuildProjectName)</AssemblyName>
+		<RootNamespace>YonatanMankovich.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+		<Authors>Yonatan Mankovich</Authors>
+		<Copyright>Copyright 2022 © Yonatan Mankovich</Copyright>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\CommandLineMinesweeper.Core\CommandLineMinesweeper.Core.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="YonatanMankovich.ConsoleDiffWriter" Version="1.0.2" />
+		<PackageReference Include="YonatanMankovich.SimpleConsoleMenus" Version="1.1.2" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="YonatanMankovich.ConsoleDiffWriter">
-      <HintPath>..\..\..\Libraries\ConsoleDiffWriter\ConsoleDiffWriter\bin\Debug\net6.0\YonatanMankovich.ConsoleDiffWriter.dll</HintPath>
-    </Reference>
-    <Reference Include="YonatanMankovich.SimpleColorConsole">
-      <HintPath>..\..\..\Libraries\SimpleColorConsole\SimpleColorConsole\bin\Debug\net6.0\YonatanMankovich.SimpleColorConsole.dll</HintPath>
-    </Reference>
-    <Reference Include="YonatanMankovich.SimpleConsoleMenus">
-      <HintPath>..\..\..\Libraries\SimpleConsoleMenu\SimpleConsoleMenu\bin\Debug\netstandard2.0\YonatanMankovich.SimpleConsoleMenus.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\CommandLineMinesweeper.Core\CommandLineMinesweeper.Core.csproj" />
+	</ItemGroup>
 
 </Project>
